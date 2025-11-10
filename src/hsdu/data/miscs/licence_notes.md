@@ -1,31 +1,14 @@
 # Licence and sources of files on this directory
-## Supercon_data.csv
+## preprocess_supercon*.csv
 from [https://github.com/vstanev1/Supercon](https://github.com/vstanev1/Supercon)
-> Downloaded from SuperCon database. 
+* Originally from SuperCon database. [Latest version of SuperCon](https://mdr.nims.go.jp/collections/4c428a0c-d209-4990-ad1f-656d05d1cfe2). [License of SuperCon](https://mdr.nims.go.jp/datasets/5d8000f3-a8cd-4ad5-bcdb-2447a5166839): Creative Commons BY Attribution 4.0 International
+* By the way, this repository does not have a 'LICENSE' claimed. I am considering it as a part of the publication [Stanev, V. et al., npj Comput Mater 4, 29 (2018).](https://www.nature.com/articles/s41524-018-0085-8), which is licensed under a Creative Commons Attribution 4.0 International License,
 
-## BCCfermi.csv
-from [MAST-ML (git repo)](https://github.com/uw-cmg/MAST-ML)  
-License:
-```
-MIT License
+## xu2025_test_HEAs.csv
+This is the subset of the tables of kitagawa et al. 2020, which is distributed under the Creative Commons Attribution (CC BY) license
 
-Copyright (c) 2019 UW-Madison Computational Materials Group
+## Kitagawa et al. 2020
+Creative Commons Attribution (CC BY) license
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
+## Cayado et al. 2025
+[Creative Commons Attribution (CC BY 3.0)](https://creativecommons.org/licenses/by/3.0/)

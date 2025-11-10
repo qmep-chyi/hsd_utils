@@ -1,0 +1,181 @@
+This is the collections of data shown in tables of cayado et al. https://www.intechopen.com/online-first/1172514 See description sheet for details,,,,,,,,
+Nominal composition,Synthesis method,Tc (K),Bc1(0) (mT),Bc2(0) (T),Structure,Reference,table,Duplicated Nominal Composition Count
+Ta34Nb33Hf8Zr14Ti11,(conventional) arc melting,7.3,32,8.2,bcc,[5],Table1. The Ta-Nb-Hf-Zr-Ti system,2
+Ta34Nb33Hf8Zr14Ti11,(conventional) arc melting,7.8,—,8.15,bcc,[12],Table1. The Ta-Nb-Hf-Zr-Ti system,2
+[TaNb]70(ZrHfTi)30,(conventional) arc melting,8.03,—,6.67,bcc,[13],Table1. The Ta-Nb-Hf-Zr-Ti system,1
+[TaNb]67(ZrHfTi)33,(conventional) arc melting,7.75,—,7.75,bcc,[13],Table1. The Ta-Nb-Hf-Zr-Ti system,4
+[TaNb]67(ZrHfTi)33,(conventional) arc melting,7.7 (1 atm),—,—,bcc,[14],Table1. The Ta-Nb-Hf-Zr-Ti system,4
+[TaNb]67(ZrHfTi)33,(conventional) arc melting,10 (60 GPa),—,—,bcc,[14],Table1. The Ta-Nb-Hf-Zr-Ti system,4
+[TaNb]67(ZrHfTi)33,(conventional) arc melting,9 (190.6 GPa),—,—,bcc,[14],Table1. The Ta-Nb-Hf-Zr-Ti system,4
+[TaNb]60(ZrHfTi)40,(conventional) arc melting,7.56,—,8.43,bcc,[13],Table1. The Ta-Nb-Hf-Zr-Ti system,1
+[TaNb]50(ZrHfTi)50,(conventional) arc melting,6.46,—,11.67,bcc,[13],Table1. The Ta-Nb-Hf-Zr-Ti system,1
+[TaNb]16(ZrHfTi)84,(conventional) arc melting,4.52,—,9.02,bcc,[13],Table1. The Ta-Nb-Hf-Zr-Ti system,1
+Ta20Nb21Hf20Zr20Ti19,(conventional) arc melting,6.9,—,10.45,bcc,[12],Table1. The Ta-Nb-Hf-Zr-Ti system,1
+Ta20Nb20Hf20Zr20Ti20,(conventional) arc melting,7.12,,,bcc,[15],Table1. The Ta-Nb-Hf-Zr-Ti system,1
+Ta22Nb24Hf21Zr23Ti10,(conventional) arc melting,6.2,—,—,bcc,[12],Table1. The Ta-Nb-Hf-Zr-Ti system,1
+Ta1/6Nb2/6Hf1/6Zr1/6Ti1/6,(conventional) arc melting,7.85,23,12.05,bcc,[16],Table1. The Ta-Nb-Hf-Zr-Ti system,8
+Ta1/6Nb2/6Hf1/6Zr1/6Ti1/6,(conventional) arc melting,8.1,,11,bcc,[17],Table1. The Ta-Nb-Hf-Zr-Ti system,8
+Ta11Nb34Hf8Zr14Ti33,(conventional) arc melting,7.5,15,12.2,bcc,[18],Table1. The Ta-Nb-Hf-Zr-Ti system,1
+Ta1/6Nb2/6Hf1/6Zr1/6Ti1/6,Arc melting,7.85,12.05,"10.7 (2 K, sf)",bcc,[16],table2. Ta-Nb-Hf-Zr-Ti HEAs prepared by methods different from the conventional arc melting.,8
+Ta1/6Nb2/6Hf1/6Zr1/6Ti1/6,Arc melting,8.1,11,"520 (4 K, sf)",bcc,[17],table2. Ta-Nb-Hf-Zr-Ti HEAs prepared by methods different from the conventional arc melting.,8
+Ta1/6Nb2/6Hf1/6Zr1/6Ti1/6,SPS,7.8,10.5,"30.5 (2 K, 0.01 T)",bcc,[21],table2. Ta-Nb-Hf-Zr-Ti HEAs prepared by methods different from the conventional arc melting.,8
+Ta1/6Nb2/6Hf1/6Zr1/6Ti1/6,SPS,7.8,10.5,"73.2 (4 K, 0.01 T)",bcc,,table2. Ta-Nb-Hf-Zr-Ti HEAs prepared by methods different from the conventional arc melting.,8
+Ta1/6Nb2/6Hf1/6Zr1/6Ti1/6,Hot-press sintering,7.9,—,—,bcc,[22],table2. Ta-Nb-Hf-Zr-Ti HEAs prepared by methods different from the conventional arc melting.,8
+Ta1/6Nb2/6Hf1/6Zr1/6Ti1/6,PLD,7.28,12.1,"1.8 (4.2 K, sf)",bcc,[23],table2. Ta-Nb-Hf-Zr-Ti HEAs prepared by methods different from the conventional arc melting.,8
+(TaNb)12(HfZrTi)88,Sputtering,2.77,6.15,—,bcc,[24],table2. Ta-Nb-Hf-Zr-Ti HEAs prepared by methods different from the conventional arc melting.,1
+(TaNb)24(HfZrTi)76,Sputtering,4.61,10.44,—,bcc,[24],table2. Ta-Nb-Hf-Zr-Ti HEAs prepared by methods different from the conventional arc melting.,1
+(TaNb)35(HfZrTi)65,Sputtering,5.6,11.05,—,bcc,[24],table2. Ta-Nb-Hf-Zr-Ti HEAs prepared by methods different from the conventional arc melting.,1
+(TaNb)46(HfZrTi)54,Sputtering,6.14,9.93,—,bcc,[24],table2. Ta-Nb-Hf-Zr-Ti HEAs prepared by methods different from the conventional arc melting.,1
+(TaNb)57(HfZrTi)43,Sputtering,6.76,8.77,—,bcc,[24],table2. Ta-Nb-Hf-Zr-Ti HEAs prepared by methods different from the conventional arc melting.,1
+(TaNb)67(HfZrTi)33,Sputtering,6.43,7.05,—,bcc,[24],table2. Ta-Nb-Hf-Zr-Ti HEAs prepared by methods different from the conventional arc melting.,1
+(TaNb)79(HfZrTi)21,Sputtering,6.33,5.78,—,bcc,[24],table2. Ta-Nb-Hf-Zr-Ti HEAs prepared by methods different from the conventional arc melting.,1
+(TaNb)87(HfZrTi)13,Sputtering,6.02,4.29,—,bcc,[24],table2. Ta-Nb-Hf-Zr-Ti HEAs prepared by methods different from the conventional arc melting.,1
+(TaNb)96(HfZrTi)04,Sputtering,5.57,2.95,—,bcc,[24],table2. Ta-Nb-Hf-Zr-Ti HEAs prepared by methods different from the conventional arc melting.,1
+(TaNb)70(HfZrTi)30 (600 nm),Sputtering,5.31,5.8,—,bcc,[25],table2. Ta-Nb-Hf-Zr-Ti HEAs prepared by methods different from the conventional arc melting.,1
+(TaNb)70(HfZrTi)30 (100 nm),Sputtering,2.69,3.2,—,bcc,[25],table2. Ta-Nb-Hf-Zr-Ti HEAs prepared by methods different from the conventional arc melting.,1
+(TaNbZrTi)90W10,Sputtering,6.2,—,—,bcc,[26],table2. Ta-Nb-Hf-Zr-Ti HEAs prepared by methods different from the conventional arc melting.,1
+(TaNbZrTi)90V10,Sputtering,6.2,—,—,bcc,[26],table2. Ta-Nb-Hf-Zr-Ti HEAs prepared by methods different from the conventional arc melting.,1
+Re20Nb20Hf20Zr20Ti20,Arc Melting,5.3,33,8.88,bcc,[27],table3. Ta-Nb-Hf-Zr-Ti-based HEAs with different substitutions (bold),1
+Re10Nb60Hf10Zr10Ti10,Arc Melting,5.7,7.95,6.31,bcc,[28],table3. Ta-Nb-Hf-Zr-Ti-based HEAs with different substitutions (bold),1
+Ta5Nb25Hf25Re10Ti35,Arc Melting,3.95,4.87,7.9,bcc,[29],table3. Ta-Nb-Hf-Zr-Ti-based HEAs with different substitutions (bold),1
+Ta5Nb35Hf20Re10Ti30,Arc Melting,4.38,6.6,6.94,bcc,[29],table3. Ta-Nb-Hf-Zr-Ti-based HEAs with different substitutions (bold),1
+Ta15Nb35Hf15Re10Ti25,Arc Melting,4.1,4.56,6.65,bcc,[29],table3. Ta-Nb-Hf-Zr-Ti-based HEAs with different substitutions (bold),1
+Ta25Nb35Hf10Re10Ti20,Arc Melting,3.62,7.15,5.85,bcc,[29],table3. Ta-Nb-Hf-Zr-Ti-based HEAs with different substitutions (bold),1
+Ta35Nb35Hf5Re10Ti15,Arc Melting,3.25,6.87,5.91,bcc,[29],table3. Ta-Nb-Hf-Zr-Ti-based HEAs with different substitutions (bold),1
+Mo20Nb20Hf20Zr20Ti20,Arc Melting,4.1,5.2,5.82,bcc,[30],table3. Ta-Nb-Hf-Zr-Ti-based HEAs with different substitutions (bold),1
+Ta20Nb20Hf20Mo20Ti20,Arc Melting,3.42,22.8,3.95,bcc,[31],table3. Ta-Nb-Hf-Zr-Ti-based HEAs with different substitutions (bold),1
+(TaNb)0.67(HfMoW)0.33,Arc Melting,4.3,—,1.45,bcc,[32],table3. Ta-Nb-Hf-Zr-Ti-based HEAs with different substitutions (bold),1
+V15Nb25Hf21Zr24Ti15,Arc Melting,5.3,—,—,bcc,[33],table3. Ta-Nb-Hf-Zr-Ti-based HEAs with different substitutions (bold),1
+Ta20Nb20Hf20V20Ti20,Arc Melting,4.93,—,6.63,bcc,[34],table3. Ta-Nb-Hf-Zr-Ti-based HEAs with different substitutions (bold),1
+[TaNb]31(HfUTi)69,Arc Melting,3.2,—,6.4,bcc,[35],table3. Ta-Nb-Hf-Zr-Ti-based HEAs with different substitutions (bold),1
+[{Sc33Cr67}Nb]67(HfZrTi)33,Arc Melting,5.6,—,—,bcc,[36],table3. Ta-Nb-Hf-Zr-Ti-based HEAs with different substitutions (bold),1
+[Ta{Sc33Cr67}]67(HfZrTi)33,Arc Melting,4.4,—,—,bcc,[36],table3. Ta-Nb-Hf-Zr-Ti-based HEAs with different substitutions (bold),1
+[TaNb]67({Sc67Cr33}ZrTi)33,Arc Melting,7.5,—,—,bcc,[36],table3. Ta-Nb-Hf-Zr-Ti-based HEAs with different substitutions (bold),1
+[TaNb]67(Hf{Sc67Cr33}Ti)33,Arc Melting,7.4,—,—,bcc,[36],table3. Ta-Nb-Hf-Zr-Ti-based HEAs with different substitutions (bold),1
+[TaNb]67(HfZr{Sc67Cr33})33,Arc Melting,7.6,—,—,bcc,[36],table3. Ta-Nb-Hf-Zr-Ti-based HEAs with different substitutions (bold),1
+[{Y33Mo67}Nb]67(HfZrTi)33,Arc Melting,4.7,—,—,bcc,[36],table3. Ta-Nb-Hf-Zr-Ti-based HEAs with different substitutions (bold),1
+[Ta{Y33Mo67}]67(HfZrTi)33,Arc Melting,3.5,—,—,bcc,[36],table3. Ta-Nb-Hf-Zr-Ti-based HEAs with different substitutions (bold),1
+[TaNb]67({Y67Mo33}ZrTi)33,Arc Melting,7.6,—,—,bcc,[36],table3. Ta-Nb-Hf-Zr-Ti-based HEAs with different substitutions (bold),1
+[TaNb]67(Hf{Y67Mo33}Ti)33,Arc Melting,6.7,—,—,bcc,[36],table3. Ta-Nb-Hf-Zr-Ti-based HEAs with different substitutions (bold),1
+[TaNb]67(HfZr{Y67Mo33})33,Arc Melting,7.5,—,—,bcc,[36],table3. Ta-Nb-Hf-Zr-Ti-based HEAs with different substitutions (bold),1
+[{Sc33Mo67}Nb]67(HfZrTi)33,Arc Melting,4.4,—,—,bcc,[36],table3. Ta-Nb-Hf-Zr-Ti-based HEAs with different substitutions (bold),1
+[Ta{Sc33Mo67}]67(HfZrTi)33,Arc Melting,2.9,—,—,bcc,[36],table3. Ta-Nb-Hf-Zr-Ti-based HEAs with different substitutions (bold),1
+[TaNb]67({Sc67Mo33}ZrTi)33,Arc Melting,7.5,—,—,bcc,[36],table3. Ta-Nb-Hf-Zr-Ti-based HEAs with different substitutions (bold),1
+[TaNb]67(Hf{Sc67Mo33}Ti)33,Arc Melting,6.6,—,—,bcc,[36],table3. Ta-Nb-Hf-Zr-Ti-based HEAs with different substitutions (bold),1
+[TaNb]67(HfZr{Sc67Mo33})33,Arc Melting,7.5,—,—,bcc,[36],table3. Ta-Nb-Hf-Zr-Ti-based HEAs with different substitutions (bold),1
+Ta20Nb20Fe20Zr20Ti20,Arc Melting,6.87,—,—,bcc,[15],table3. Ta-Nb-Hf-Zr-Ti-based HEAs with different substitutions (bold),1
+Ta20Nb20Ge20Zr20Ti20,Arc Melting,8.46,—,—,bcc,[15],table3. Ta-Nb-Hf-Zr-Ti-based HEAs with different substitutions (bold),1
+Ta1/6Nb1/6Hf1/6Zr1/6Ti1/6V1/6,Arc Melting,5.09,—,—,bcc,[15],table3. Ta-Nb-Hf-Zr-Ti-based HEAs with different substitutions (bold),1
+Ta1/6Nb1/6Ge1/6V1/6Zr1/6Ti1/6,Arc Melting,8.4,—,—,bcc,[15],table3. Ta-Nb-Hf-Zr-Ti-based HEAs with different substitutions (bold),1
+Ta1/6Nb1/6Si1/6V1/6Zr1/6Ti1/6,Arc Melting,4.29,—,—,bcc,[15],table3. Ta-Nb-Hf-Zr-Ti-based HEAs with different substitutions (bold),1
+Ta1/6Nb1/6Si1/6Ge1/6Zr1/6Ti1/6,Arc Melting,7.4,—,—,bcc,[15],table3. Ta-Nb-Hf-Zr-Ti-based HEAs with different substitutions (bold),1
+Ta20Nb20Hf20Sc20Ti20,Arc Melting,6.6,—,13.1,bcc,[37],table3. Ta-Nb-Hf-Zr-Ti-based HEAs with different substitutions (bold),1
+Ta20Nb20Hf20Zr20Sc20,Arc Melting,7.7,—,12.4,bcc,[37],table3. Ta-Nb-Hf-Zr-Ti-based HEAs with different substitutions (bold),1
+Ta20Nb20Sc20Zr20Ti20,Arc Melting,7.9,—,19.3,bcc,[37],table3. Ta-Nb-Hf-Zr-Ti-based HEAs with different substitutions (bold),1
+Ta1/6Nb1/6Hf1/6Zr1/6Ti1/6Sc1/6,Arc Melting,7.2,—,14.1,bcc,[37],table3. Ta-Nb-Hf-Zr-Ti-based HEAs with different substitutions (bold),1
+All5Nb24V5Zr26Ti40,Arc Melting,5.36,—,—,bcc,[38],table3. Ta-Nb-Hf-Zr-Ti-based HEAs with different substitutions (bold),1
+All5Nb14V5Zr41Ti35,Arc Melting,4.73,—,—,bcc,[38],table3. Ta-Nb-Hf-Zr-Ti-based HEAs with different substitutions (bold),1
+All5Nb24V5Zr31Ti35,Arc Melting,5.45,—,—,bcc,[38],table3. Ta-Nb-Hf-Zr-Ti-based HEAs with different substitutions (bold),1
+All5Nb34V5Zr21Ti35,Arc Melting,6.47,—,—,bcc,[38],table3. Ta-Nb-Hf-Zr-Ti-based HEAs with different substitutions (bold),1
+All5Nb44V5Zr11Ti35,Arc Melting,6.75,—,—,bcc,[38],table3. Ta-Nb-Hf-Zr-Ti-based HEAs with different substitutions (bold),1
+All5Nb14V5Zr31Ti45,Arc Melting,4.96,—,—,bcc,[38],table3. Ta-Nb-Hf-Zr-Ti-based HEAs with different substitutions (bold),1
+All5Nb34V5Zr31Ti25,Arc Melting,6.18,—,—,bcc,[38],table3. Ta-Nb-Hf-Zr-Ti-based HEAs with different substitutions (bold),1
+All5Nb44V5Zr31Ti15,Arc Melting,6.98,—,—,bcc,[38],table3. Ta-Nb-Hf-Zr-Ti-based HEAs with different substitutions (bold),1
+(ScZrNb)60[RhPd]40,Arc Melting,5.2,,2.1,CsCl,[41],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+(ScZrNb)62[RhPd]38,Arc Melting,9.2,,8.9,CsCl,[41],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+(ScZrNb)63[RhPd]37,Arc Melting,9.3,,9.6,CsCl,[41],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+(ScZrNb)65[RhPd]35,Arc Melting,9.7,,10.7,CsCl,[41],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+(ScZrNbTa)67[RhPd]33,Arc Melting,4.2,,2.1,CsCl,[41],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+(ScZrNbTa)684[RhPd]316,Arc Melting,6.4,,8.8,CsCl,[41],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+(ScZrNbTa)685[RhPd]315,Arc Melting,7,,,CsCl,[42],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+(ZrNb)10[MoReRu]90,Arc Melting,5.3,,7.86,α-Mn,[43],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+(HfTaWIr)20[Re]80,Arc Melting,5.9,,—,α-Mn,[43],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+(HfTaWIr)40[Re]60,Arc Melting,4,,4.64,α-Mn,[43],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+(HfTaWPt)20[Re]80,Arc Melting,6.3,,—,α-Mn,[43],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+(HfTaWPt)40[Re]60,Arc Melting,4.4,,5.9,α-Mn,[43],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+(HfTaWPt)50[Re]50,Arc Melting,2.4,,—,α-Mn,[43],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+Nb25Mo5Re35Ru25Rh10,Arc Melting,4.66,,7.5,α-Mn,[44],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+Nb25Mo10Re35Ru20Rh10,Arc Melting,5.1,,8.3,α-Mn,[44],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+Nb25Mo15Re35Ru15Rh10,Arc Melting,5.1,,7.9,α-Mn,[44],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+Nb5Mo35Re15Ru35Rh10,Arc Melting,7.54,,8.9,α-Mn,[44],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+Nb5Mo30Re20Ru35Rh10,Arc Melting,6.69,,7.5,α-Mn,[44],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+Nb5Mo25Re25Ru35Rh10,Arc Melting,6.51,,7.5,α-Mn,[44],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+Nb5Mo20Re30Ru35Rh10,Arc Melting,5.46,,6.1,α-Mn,[44],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+Re56Nb11Ti11Zr11Hf11,Arc Melting,4.4,,3.6,hcp,[45],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+(MoReRuRh)95Ti5,Arc Melting,3.6,,—,hcp,[46],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+(MoReRuRh)90Ti10,Arc Melting,4.7,,—,hcp,[46],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+Nb10Mo35Ru35Rh10Pd10,Arc Melting,5.58,,6.9,hcp,[47],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+Nb15Mo32.5Ru32.5Rh10Pd10,Arc Melting,6.19,,8.1,hcp,[47],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+Nb20Mo30Ru30Rh10Pd10,Arc Melting,6.1,,8.3,hcp,[47],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+Mo30Re29Ru36Pd1Pt4,Arc Melting,8.17,,—,hcp,[49],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+Mo27Re25Ru34Pd5Pt9,Arc Melting,4.91,,—,hcp,[49],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+Mo24Re20Ru30Pd12Pt14,Arc Melting,2.22,,—,hcp,[49],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+Mo22Re22Ru28Pd10Pt18,Arc Melting,1.64,,—,hcp,[49],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+(RuRhPdIr)80Pt20Sb,SSR (solid state reaction),2.15,,—,NiAs,[48],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+Mo28Re28Ru35Pd4Pt5C30,Arc Melting,2.46,,—,fcc,[49],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+Mo29Re27Ru36Pd4Pt4C44,Arc Melting,2.72,,—,fcc,[49],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+Mo26Re25Ru33Pd8Pt9C27,Arc Melting,2.28,,—,fcc,[49],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+Mo27Re25Ru34Pd6Pt9C40,Arc Melting,2.3,,—,fcc,[49],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+Mo26Re22Ru31Pd9Pt13C22,Arc Melting,1.86,,—,fcc,[49],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+Mo23Re23Ru30Pd11Pt14C31,Arc Melting,1.91,,—,fcc,[49],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+Mo21Re21Ru27Pd13Pt18C25,Arc Melting,1.87,,—,fcc,[49],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+Mo21Re22Ru27Pd14Pt17C30,Arc Melting,1.75,,—,fcc,[49],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+Ta5Mo35W5Re35Ru20,Arc Melting,6.29,,—,σ-type,[8],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+Ta5Mo30W10Re35Ru20,Arc Melting,6.2,,—,σ-type,[8],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+Ta5Mo25W15Re35Ru20,Arc Melting,6.1,,—,σ-type,[8],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+Ta5Mo20W20Re35Ru20,Arc Melting,5.69,,—,σ-type,[8],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+Ta5Mo15W25Re35Ru20,Arc Melting,5.46,,—,σ-type,[8],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+Ta5Mo10W30Re35Ru20,Arc Melting,5.45,,—,σ-type,[8],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+Ta5Mo5W35Re35Ru20,Arc Melting,4.78,,—,σ-type,[8],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+Ta7Mo33W5Re35Ru20,Arc Melting,6.13,,—,σ-type,[8],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+Ta9Mo31W5Re35Ru20,Arc Melting,5.7,,—,σ-type,[8],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+Ta11Mo29W5Re35Ru20,Arc Melting,5.32,,—,σ-type,[8],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+Ta13Mo27W5Re35Ru20,Arc Melting,5.27,,—,σ-type,[8],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+Ta10Mo30Cr5Re35Ru20,Arc Melting,4.79,,6.1,σ-type,[50],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+Ta10Mo25Cr10Re35Ru20,Arc Melting,4.41,,5.8,σ-type,[50],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+Ta10Mo22Cr13Re35Ru20,Arc Melting,3.98,,4.9,σ-type,[50],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+Ta10Mo5W30Re35Ru20,Arc Melting,4.87,,6.7,σ-type,[51],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+Ta10Mo5W30Re35Ru20C2,Arc Melting,4.8,,—,σ-type,[51],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+Ta10Mo5W30Re35Ru20C16,Arc Melting,5.36,,—,β-Mn,[51],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+Ta10Mo5W30Re35Ru20C18,Arc Melting,5.32,,—,β-Mn,[51],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+Ta10Mo5W30Re35Ru20C20,Arc Melting,5.34,,9.3,β-Mn,[51],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+Cr5Mo35W12Re35Ru13C20,Arc Melting,5.49,,9.7,noncentrosymmetric cubic β-Mn type structure,[52],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+Cr8Mo32W12Re35Ru13C20,Arc Melting,4.73,,8.4,noncentrosymmetric cubic β-Mn type structure,[52],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+Cr11Mo29W12Re35Ru13C20,Arc Melting,3.83,,7.3,noncentrosymmetric cubic β-Mn type structure,[52],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+Cr14Mo26W12Re35Ru13C20,Arc Melting,3.35,,5.3,noncentrosymmetric cubic β-Mn type structure,[52],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+Mo11W11V11Re34B33,Arc Melting,4,,7.3,CuAl2,[53],table4. non-bcc structure-type HEA superconductors. SSR solid-state reaction; all other samples prepared by arc melting.,1
+(V0.5Nb0.5)2.8Mo0.2Al0.5Ga0.5,arc melting,10.2,,20.1,A15,[7],"table5. Intermetallic compound, A15 and TrZr2 high-entropy superconductors.",1
+(V0.5Nb0.5)2.6Mo0.4Al0.5Ga0.5,arc melting,9.2,,17.7,A16,[7],"table5. Intermetallic compound, A15 and TrZr2 high-entropy superconductors.",1
+(V0.5Nb0.5)2.4Mo0.6Al0.5Ga0.5,arc melting,8.9,,17,A17,[7],"table5. Intermetallic compound, A15 and TrZr2 high-entropy superconductors.",1
+(V0.5Nb0.5)2Mo1Al0.5Ga0.5,arc melting,6.1,,9.9,A18,[7],"table5. Intermetallic compound, A15 and TrZr2 high-entropy superconductors.",1
+(V0.5Nb0.5)1.8Mo1.2Al0.5Ga0.5,arc melting,4.8,,7.6,A19,[7],"table5. Intermetallic compound, A15 and TrZr2 high-entropy superconductors.",1
+(V0.5Nb0.5)1.6Mo1.4Al0.5Ga0.5,arc melting,3.2,,4.8,A20,[7],"table5. Intermetallic compound, A15 and TrZr2 high-entropy superconductors.",1
+V5Nb35Mo35Ir10Pt15,arc melting,5.18,,6.4,A21,[55],"table5. Intermetallic compound, A15 and TrZr2 high-entropy superconductors.",1
+V15Nb30Mo30Ir10Pt15,arc melting,4.49,,5.7,A22,[55],"table5. Intermetallic compound, A15 and TrZr2 high-entropy superconductors.",1
+V25Nb25Mo25Ir10Pt15,arc melting,3.61,,4.4,A23,[55],"table5. Intermetallic compound, A15 and TrZr2 high-entropy superconductors.",1
+Nb3Al0.2Sn0.2Ge0.2Ga0.2Si0.2,arc melting,9,,10.4,A24,[56],"table5. Intermetallic compound, A15 and TrZr2 high-entropy superconductors.",1
+Nb3Al0.3Sn0.3Ge0.2Ga0.1Si0.1,arc melting,11,,13.3,A25,[56],"table5. Intermetallic compound, A15 and TrZr2 high-entropy superconductors.",1
+V3Al0.07Si0.30Ga0.08Ge0.30Sn0.25,arc melting,6.3,,8.8,A26,[57],"table5. Intermetallic compound, A15 and TrZr2 high-entropy superconductors.",1
+Co0.2Ni0.1Cu0.1Rh0.3Ir0.3Zr2,arc melting,8,,12,CuAl2,[58],"table5. Intermetallic compound, A15 and TrZr2 high-entropy superconductors.",1
+Fe0.09Co0.19Ni0.11Rh0.27Ir0.33Zr2,arc melting,7.8,,8.5,CuAl3,[54],"table5. Intermetallic compound, A15 and TrZr2 high-entropy superconductors.",1
+Fe0.11Co0.30Ni0.20Rh0.07Ir0.32Zr2,arc melting,6.7,,6.6,CuAl4,[54],"table5. Intermetallic compound, A15 and TrZr2 high-entropy superconductors.",1
+Fe0.19Co0.19Ni0.20Rh0.21Ir0.21Zr2,arc melting,5.4,,5.5,CuAl5,[54],"table5. Intermetallic compound, A15 and TrZr2 high-entropy superconductors.",1
+Fe0.29Co0.19Ni0.30Rh0.09Ir0.12Zr2,arc melting,4.8,,4.8,CuAl6,[54],"table5. Intermetallic compound, A15 and TrZr2 high-entropy superconductors.",1
+Fe0.09Co0.20Ni0.20Cu0.17Rh0.19Ir0.15Zr2,arc melting,5.7,,,CuAl7,[59],"table5. Intermetallic compound, A15 and TrZr2 high-entropy superconductors.",1
+(TiZrNbHfTa)C,,2.35,,0.51,NaCl,[62],table6. high-entropy superconducting ceramics,1
+(MoNbTaVW)C0.9,,3.4,,3.37,NaCl,[63],table6. high-entropy superconducting ceramics,1
+(AgInSnPbBi)Te,,2.6,,2.8,NaCl,[64],table6. high-entropy superconducting ceramics,1
+({AgSnPbBi}(1−x)/4Inx)Te,,<2.8,,—,NaCl,[65],table6. high-entropy superconducting ceramics,1
+"(Co,Au)0.2(Rh,Ir,Pd,Pt)0.8Te2",,4.5,,—,1 T-NiTe2,[66],table6. high-entropy superconducting ceramics,1
+Co0.03Au0.06Rh0.23Ir0.24Pd0.16Pt0.28Te2,,2.5,,—,1 T-NiTe2,[66],table6. high-entropy superconducting ceramics,1
+(Nb0.1Mo0.3W0.3Re0.2Ru0.1)5Si3,,3.3,,5,W5Si3,[67],table6. high-entropy superconducting ceramics,1
+(Nb0.2Mo0.3W0.3Re0.1Ru0.1)5Si3,,3.2,,5.1,W5Si3,[67],table6. high-entropy superconducting ceramics,1
+La0.1Ce0.1Pr0.2Nd0.3Sm0.3O0.5F0.5BiS2,,4.9,,,LaOBiS2,[68],table6. high-entropy superconducting ceramics,1
+La0.2Ce0.2Pr0.2Nd0.2Sm0.2O0.5F0.5BiS2,,3.97,,,LaOBiS3,[69],table6. high-entropy superconducting ceramics,1
+La0.3Ce0.3Pr0.2Nd0.1Sm0.1OBiS2,,3.4,,0.65/11,LaOBiS4,[61],table6. high-entropy superconducting ceramics,1
+La0.1Ce0.3Pr0.3Nd0.2Sm0.1OBiS2,,4.3,,0.69/15,LaOBiS5,[61],table6. high-entropy superconducting ceramics,1
+La0.2Ce0.2Pr0.2Nd0.2Sm0.2OBiS2,,3.3,,0.24/4.9,LaOBiS6,[61],table6. high-entropy superconducting ceramics,1
+La0.1Ce0.3Pr0.1Nd0.2Sm0.3OBiS2,,4.6,,0.42/16,LaOBiS7,[61],table6. high-entropy superconducting ceramics,1
+La0.1Ce0.3Pr0.3Nd0.1Sm0.2OBiS2,,3.7,,,LaOBiS8,[70],table6. high-entropy superconducting ceramics,1
+La0.2Ce0.3Pr0.3Sm0.1Gd0.1OBiS2,,3,,,LaOBiS9,[70],table6. high-entropy superconducting ceramics,1
+La0.2Ce0.3Pr0.2Nd0.1Sm0.1Gd0.1OBiS2,,2.9,,,LaOBiS10,[70],table6. high-entropy superconducting ceramics,1

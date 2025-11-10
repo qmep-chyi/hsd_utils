@@ -25,10 +25,11 @@ class XuTestHEA(D2TableDataset):
     see supple. Table 1
     """
     def __init__(self):
-        with resources.as_file(resources.files("hsdu.data.miscs") /"xu2025_validation_HEAs.csv") as path:
+        with resources.as_file(resources.files("hsdu.data.miscs") /"xu2025_test_HEAs.csv") as path:
             xls_path = path
 
-        super().__init__(xls_path=xls_path, notebook="Sheet1", exception_col=None)
+        super().__init__(xls_path=xls_path, notebook="Sheet1", exception_col=None,
+                         parse_frac_col=False, parse_elem_col=False, gen_pymatgen_comps_col=False)
         elem_list=[]
         frac_list=[]
         for _, row in self.dataframe.iterrows():
