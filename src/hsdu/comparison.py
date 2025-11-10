@@ -17,7 +17,7 @@ from typing import Optional
 import pandas as pd
 from pymatgen.core.composition import Composition
 
-from draftsh.dataset import D2TableDataset, BaseDataset, Dataset
+from hsdu.dataset import D2TableDataset, BaseDataset, Dataset
 
 class XuTestHEA(D2TableDataset):
     """reproduce test HEA set of Xu et al. 2025.
@@ -25,7 +25,7 @@ class XuTestHEA(D2TableDataset):
     see supple. Table 1
     """
     def __init__(self):
-        with resources.as_file(resources.files("draftsh.data.miscs") /"xu2025_validation_HEAs.csv") as path:
+        with resources.as_file(resources.files("hsdu.data.miscs") /"xu2025_validation_HEAs.csv") as path:
             xls_path = path
 
         super().__init__(xls_path=xls_path, notebook="Sheet1", exception_col=None)
@@ -45,7 +45,7 @@ class StanevSuperCon(BaseDataset):
     """load processed SuperCon csv from Stanev et al. 2018
 
     preprocess:
-        * see `src\draftsh\data\miscs\preprocess_supercon.py`
+        * see `src\hsdu\data\miscs\preprocess_supercon.py`
         * note that Tc_upper_bound is hard coded, because it is close to the 5213 entries of xu et al
     """
     def __init__(self, drop_cols = None, exception_col = None, maxlen: Optional[int] = None):
@@ -73,7 +73,7 @@ class StanevSuperCon(BaseDataset):
         self.dataframe: pd.DataFrame = self.dataframe.reset_index(drop=True)
         
     def load_data(self):
-        with resources.as_file(resources.files("draftsh.data.miscs") /"preprocessed_supercon.csv") as path:
+        with resources.as_file(resources.files("hsdu.data.miscs") /"preprocessed_supercon.csv") as path:
             self.dataframe = pd.read_csv(path, nrows = self.maxlen)
         return self.dataframe
         

@@ -1,7 +1,5 @@
 """load in-house dataset
 
-Todo
-    * refactor DLDataset
 """
 
 import json
@@ -17,12 +15,10 @@ import numpy as np
 from pymatgen.core.composition import Composition
 from pymatgen.core.periodic_table import Element
 from sklearn.model_selection import train_test_split
-from matminer.featurizers.composition import ElementProperty
 
-from draftsh.parsers import CellParser, FracParser, ElemParser
-from draftsh.utils.utils import config_parser
-from draftsh.feature import MultiSourceFeaturizer
-from draftsh.utils.conversion_utils import process_targets, almost_equals_pymatgen_atomic_fraction, norm_fracs
+from hsdu.parsers import CellParser, FracParser, ElemParser
+from hsdu.utils.utils import config_parser
+from hsdu.utils.conversion_utils import process_targets, almost_equals_pymatgen_atomic_fraction, norm_fracs
 
 
 #from matminer.featurizers.composition import composite
@@ -217,7 +213,7 @@ class D2TableDataset(BaseDataset):
             if xls_path.is_file():
                 pass
             else:
-                with resources.as_file(resources.files("draftsh.data").joinpath(xls_path)) as pth:
+                with resources.as_file(resources.files("hsdu.data").joinpath(xls_path)) as pth:
                     xls_path = pth
                 assert xls_path.is_file(),FileNotFoundError
 
@@ -288,7 +284,7 @@ class Dataset(D2TableDataset):
             lambda x: len(x["elements"])!=len(x["elements_fraction"]), axis=1)]
     
     def featurize_and_split(self,
-                            featurizer: MultiSourceFeaturizer, test_size: float = 0.2,
+                            featurizer: Optional[MultiSourceFeaturizer], test_size: float = 0.2,
                             shuffle: bool = True, seed: int = 42,
                             to_numpy: bool = False) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """process target and features(input), split.
@@ -296,74 +292,17 @@ class Dataset(D2TableDataset):
         arguments:
         """
         target_df = process_targets(self.dataframe, targets = self.config["targets"])
-        featurized_df = featurizer.featurize_all(self.dataframe)
-        # featurized_df and target_df
-        featurized_df = featurized_df.reset_index(drop=True)
-        target_df = target_df.reset_index(drop=True)
-        assert len(featurized_df) == len(target_df)
-
-        #shuffle, split.
-        N = len(featurized_df)
-        tr_idx, te_idx = train_test_split(
-            np.arange(N),
-            test_size=test_size,
-            random_state=seed,
-            shuffle=shuffle,
-        )
-        if to_numpy:
-            return (featurized_df.loc[tr_idx].to_numpy(),
-                    target_df.loc[tr_idx].to_numpy(),
-                    featurized_df.loc[te_idx].to_numpy(),
-                    target_df.loc[te_idx].to_numpy())
+        if featurizer is None:
+            raise NotImplementedError
         else:
-            return (featurized_df.loc[tr_idx],
-                    target_df.loc[tr_idx],
-                    featurized_df.loc[te_idx],
-                    target_df.loc[te_idx])
-
-class DLDataset(BaseDataset):
-    """
-    mostly copy of XlsxDataset and Dataset. should be refactored
-    """
-    def __init__(self, data_path: Path | str, drop_cols: Optional[list[str]] = None):
-        if isinstance(data_path, str):
-            data_path = Path(data_path)
-        assert data_path.is_absolute(), f"data_path: {data_path} should be absolute"
-        super().__init__(data_path, drop_cols, exception_col = None)
-        df = self.load_data()
-        self.dataframe: pd.DataFrame = df.reset_index(drop=True)
-        self.parse_elements_col()
-        self.parse_frac_col()
-        self.elemental_set: set = self.elemental_stats()        
-        self.pymatgen_comps()
-
-
-    def load_data(self) -> pd.DataFrame:
-        return pd.read_excel(self.dset_path, index_col=0) 
-
-    def parse_elements_col(self, colname: str="elements"):
-        """parse string of xlsx cell with elements in list form"""
-        cell_parser = ElemParser()
-        return self.parse_col(colname, cell_parser, False)
-
-    def parse_frac_col(self, colname: str="elements_fraction"):
-        """parse string of xlsx cell with fractions in list form"""
-        cell_parser = FracParser()
-        return self.parse_col(colname, cell_parser, False)
-    
-    def featurize_and_split(self, test_size: float = 0.2, shuffle: bool = True, seed: int = 42, to_numpy: bool = False) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-        config = {"targets": ["max_Tc"]}
-        target_df = process_targets(self.dataframe, targets = config["targets"], exception_row=None)
-        featurizer = ElementProperty.from_preset("magpie", impute_nan=True)
-        featurized_df = featurizer.featurize_dataframe(self.dataframe, col_id='comps_pymatgen', ignore_errors=True)
+            forward_input_df = featurizer.featurize_all(self.dataframe)
+            forward_input_df = forward_input_df.reset_index(drop=True)
         
-        # featurized_df and target_df
-        featurized_df = featurized_df.reset_index(drop=True)
         target_df = target_df.reset_index(drop=True)
-        assert len(featurized_df) == len(target_df)
+        assert len(forward_input_df) == len(target_df)
 
         #shuffle, split.
-        N = len(featurized_df)
+        N = len(forward_input_df)
         tr_idx, te_idx = train_test_split(
             np.arange(N),
             test_size=test_size,
@@ -371,12 +310,12 @@ class DLDataset(BaseDataset):
             shuffle=shuffle,
         )
         if to_numpy:
-            return (featurized_df.loc[tr_idx].to_numpy(),
+            return (forward_input_df.loc[tr_idx].to_numpy(),
                     target_df.loc[tr_idx].to_numpy(),
-                    featurized_df.loc[te_idx].to_numpy(),
+                    forward_input_df.loc[te_idx].to_numpy(),
                     target_df.loc[te_idx].to_numpy())
         else:
-            return (featurized_df.loc[tr_idx],
+            return (forward_input_df.loc[tr_idx],
                     target_df.loc[tr_idx],
-                    featurized_df.loc[te_idx],
+                    forward_input_df.loc[te_idx],
                     target_df.loc[te_idx])

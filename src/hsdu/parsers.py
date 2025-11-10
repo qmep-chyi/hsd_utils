@@ -14,7 +14,6 @@ Todo:
     - vals = vals["nominal"]: hard coded
     - if val== 'Non-superconducting': hard coded
 
-
 """
 from abc import ABC, abstractmethod
 from typing import Callable
