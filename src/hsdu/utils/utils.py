@@ -26,7 +26,7 @@ def config_parser(config: str | dict | Path, mode: Literal["dataset", "feature",
         if config.is_absolute():
             xls_path = config
         else:
-            with resources.as_file(resources.files(f"draftsh.config").joinpath(mode).joinpath(config.name)) as path:
+            with resources.as_file(resources.files(f"hsdu.config").joinpath(mode).joinpath(config.name)) as path:
                 xls_path = path
                 assert xls_path.is_file(), FileNotFoundError(xls_path)
         fp = open(xls_path, "r", encoding = "utf-8")

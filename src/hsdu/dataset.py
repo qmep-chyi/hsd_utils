@@ -200,7 +200,9 @@ class D2TableDataset(BaseDataset):
             self, xls_path: Path | str,
             notebook: str = None,
             drop_cols: Optional[list[str]] = None,
-            exception_col: Optional[str | list[str]] = "Exceptions"):
+            exception_col: Optional[str | list[str]] = "Exceptions",
+            parse_elem_col: bool=True, parse_frac_col:bool=True,
+            gen_pymatgen_comps_col:bool=True):
         if drop_cols is None:
             self.drop_cols = []
         else:
@@ -227,9 +229,12 @@ class D2TableDataset(BaseDataset):
         else:
             pass
         self.dataframe: pd.DataFrame = df.reset_index(drop=True)
-        self.parse_elements_col()
-        self.parse_frac_col()
-        self.pymatgen_comps()
+        if parse_elem_col:
+            self.parse_elements_col()
+        if parse_frac_col:
+            self.parse_frac_col()
+        if gen_pymatgen_comps_col:
+            self.pymatgen_comps()
 
 
     def load_data(self) -> pd.DataFrame:
@@ -283,20 +288,13 @@ class Dataset(D2TableDataset):
             self.dataframe.loc[self.dataframe.apply(
             lambda x: len(x["elements"])!=len(x["elements_fraction"]), axis=1)]
     
-    def featurize_and_split(self,
-                            featurizer: Optional[MultiSourceFeaturizer], test_size: float = 0.2,
-                            shuffle: bool = True, seed: int = 42,
-                            to_numpy: bool = False) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-        """process target and features(input), split.
-
-        arguments:
-        """
+    def split(self,
+              test_size: float = 0.2,
+              shuffle: bool = True, seed: int = 42,
+              to_numpy: bool = False) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+        """process target and split.        """
         target_df = process_targets(self.dataframe, targets = self.config["targets"])
-        if featurizer is None:
-            raise NotImplementedError
-        else:
-            forward_input_df = featurizer.featurize_all(self.dataframe)
-            forward_input_df = forward_input_df.reset_index(drop=True)
+        raise NotImplementedError
         
         target_df = target_df.reset_index(drop=True)
         assert len(forward_input_df) == len(target_df)

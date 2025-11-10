@@ -4,7 +4,7 @@ follow 2.1 Data collection and cleaning
 * SuperCon version:  
     > over '14794'  
     * I don't know which version of [SuperCon](https://mdr.nims.go.jp/collections/5712mb227) employed
-    * note that Stanev et al(2018) used over 16k compositions. I will use that
+    * note that Stanev et al(2018) used over 16k compositions. I used [stanev's file from github.com/vstanev1/Supercon](https://github.com/vstanev1/Supercon/blob/master/Supercon_data.csv)
 1. Absence of $T_c$.   
     > ... cleaned out 3052 data points  
 * Stanev et al. 2018 classified non-Sc observed instances to train classifier

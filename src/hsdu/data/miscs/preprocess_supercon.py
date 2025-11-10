@@ -7,7 +7,7 @@ Todo:
         * Tc_upper_bound
 """
 import pandas as pd
-from draftsh.comparison import StanevSuperCon, XuTestHEA
+from hsdu.comparison import StanevSuperCon, XuTestHEA
 dataset = StanevSuperCon()
 
 # filter non_SC_observed and high-Tc datapoints
