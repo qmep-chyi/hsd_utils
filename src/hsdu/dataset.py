@@ -41,7 +41,7 @@ class BaseDataset(ABC):
         else:
             self.drop_cols = drop_cols
         self.dset_path: Path = data_path
-        self.dataframe: pd.DataFrame = pd.DataFrame()
+        self.df: pd.DataFrame = pd.DataFrame()
         self.exception_col = exception_col
         self.comps_pymatgen_col = comps_pymatgen_col
 
@@ -50,8 +50,8 @@ class BaseDataset(ABC):
         pass
 
     def parse_col(self, col: str, cell_parser: CellParser, to_list: bool, data_type: type = str):
-        for idx, row in self.dataframe.iterrows():
-            self.dataframe.at[idx, col] = cell_parser.parse(row[col])
+        for idx, row in self.df.iterrows():
+            self.df.at[idx, col] = cell_parser.parse(row[col])
         if to_list:
             raise NotImplementedError
             #self.dataframe[col].astype(data_type)
@@ -59,19 +59,19 @@ class BaseDataset(ABC):
     def elemental_stats(self):
         """set of elements in the dataset"""
         elems=set()
-        for _, row in self.dataframe.iterrows():
+        for _, row in self.df.iterrows():
             elems.update(row["elements"])
         assert elems.issubset(set([el.symbol for el in Element]))
         return elems
     
     def pymatgen_comps(self, inplace = True) -> Optional[pd.Series]:
-        comps_pymatgen = self.dataframe.apply(lambda row: Composition(zip(row["elements"], row["elements_fraction"])), axis=1)
-        assert len(comps_pymatgen) == len(self.dataframe)
+        comps_pymatgen = self.df.apply(lambda row: Composition(zip(row["elements"], row["elements_fraction"])), axis=1)
+        assert len(comps_pymatgen) == len(self.df)
         if inplace:
-            self.dataframe["comps_pymatgen"] = comps_pymatgen
+            self.df["comps_pymatgen"] = comps_pymatgen
             return None
         else:
-            return self.dataframe["comps_pymatgen"]
+            return self.df["comps_pymatgen"]
         
     def pymatgen_duplicates(self, other_df:Optional[pd.DataFrame]=None, save_dir=None, exception_map:Optional[dict]=None, rtol=0.1, return_dict:bool=True):
         """
@@ -99,11 +99,11 @@ class BaseDataset(ABC):
         self.duplicated_comps_group={}
         self.duplicated_comps=set()
         if other_df is None:
-            df1=self.dataframe
+            df1=self.df
         else:
             assert type(self).__name__=='XuTestHEA', "compare with other_df is implemented only for XuTestHEA"
             df1=other_df
-        for idx0, row0 in self.dataframe.iterrows():
+        for idx0, row0 in self.df.iterrows():
             if idx0 not in self.duplicated_comps:
                 duplicated_row={}
                 idx1_start = 0 if other_df is not None else idx0 # when compare self, (i,j)==(j,i)
@@ -141,7 +141,7 @@ class BaseDataset(ABC):
     
     def validate_by_composition(self, rtol:float=0.001):
         allowed = set(string.ascii_letters + string.digits + '.')
-        for idx, row in self.dataframe.iterrows():
+        for idx, row in self.df.iterrows():
             comp=None
             try:
                 if set(row["composition"]) <= allowed:
@@ -167,21 +167,21 @@ class BaseDataset(ABC):
     def add_duplicated_comps_column(self, criteria_rule: Literal['single_ref'], inplace=True):
         assert criteria_rule in ['single_ref'], NotImplementedError(criteria_rule)
         duplicate_groups=[] # will be a new column, group name = first instance idx(in self.dataset.duplicated_comps_group.keys)
-        for idx0, row0 in self.dataframe.iterrows():
+        for idx0, row0 in self.df.iterrows():
             group_row=np.nan
             if idx0 in self.duplicated_comps_group.keys():
                 for idx1 in self.duplicated_comps_group[idx0].keys():            
                     cite0=row0["full citation"]
-                    cite1=self.dataframe.loc[idx1, "full citation"]
+                    cite1=self.df.loc[idx1, "full citation"]
                     group_row = idx0 if cite0==cite1 else np.nan
             duplicate_groups.append(group_row)
-        self.dataframe['duplicated_group']=duplicate_groups
+        self.df['duplicated_group']=duplicate_groups
         return duplicate_groups
     
     def assign_dtypes(self):
-        for col in self.dataframe.columns:
-            if not self.dataframe.col.dtype in (list, dict, float, str):
-                self.dataframe[col] = self.dataframe[col].astype(str)
+        for col in self.df.columns:
+            if not self.df.col.dtype in (list, dict, float, str):
+                self.df[col] = self.df[col].astype(str)
 
 class D2TableDataset(BaseDataset):
     """Base Class for Dataset classes, load xlsx file
@@ -200,6 +200,7 @@ class D2TableDataset(BaseDataset):
             self, xls_path: Path | str,
             notebook: str = None,
             drop_cols: Optional[list[str]] = None,
+            index_col: Optional[str] = None,
             exception_col: Optional[str | list[str]] = "Exceptions",
             parse_elem_col: bool=True, parse_frac_col:bool=True,
             gen_pymatgen_comps_col:bool=True):
@@ -207,6 +208,13 @@ class D2TableDataset(BaseDataset):
             self.drop_cols = []
         else:
             self.drop_cols = drop_cols
+
+        # pd.read_csv or pd.read_xls creates a new index column if not specified
+        if index_col is None:
+            self.index_col=None
+        else:
+            self.index_col=index_col
+
         if isinstance(xls_path, str):
             xls_path = Path(xls_path)
         if xls_path.is_absolute():
@@ -228,7 +236,7 @@ class D2TableDataset(BaseDataset):
             df = df[df[exception_col].apply(pd.isna)]
         else:
             pass
-        self.dataframe: pd.DataFrame = df.reset_index(drop=True)
+        self.df: pd.DataFrame = df.reset_index(drop=True)
         if parse_elem_col:
             self.parse_elements_col()
         if parse_frac_col:
@@ -241,13 +249,21 @@ class D2TableDataset(BaseDataset):
         if self.dset_path.suffix==".xlsx" or self.dset_path.stem==".xls":
             df = pd.read_excel(self.dset_path,
                             sheet_name=self.sheet,
-                            nrows=self.maxlen)
+                            nrows=self.maxlen,
+                            index_col=self.index_col)
         elif self.dset_path.suffix==".csv":
             df = pd.read_csv(self.dset_path,
-                            nrows=self.maxlen)
+                            nrows=self.maxlen,
+                            index_col=self.index_col)
         else:
             raise TypeError("read only xlsx, xls, csv files(should have suffix).")
-        return df.drop(columns=self.drop_cols)
+
+        drop_cols_remaining=[]
+        if len(self.drop_cols)>0:
+            for col in self.drop_cols:
+                if col in df.columns:
+                    drop_cols_remaining.append(col)
+        return df.drop(columns=drop_cols_remaining)
 
     def parse_elements_col(self, colname: str="elements"):
         """parse string of xlsx cell with elements in list form"""
@@ -278,14 +294,15 @@ class Dataset(D2TableDataset):
             xls_path, 
             notebook = self.config.get("sheetname"), 
             drop_cols = self.config.get("drop_cols", drop_cols), 
+            index_col= self.config.get("index_column"),
             exception_col=self.config.get("exception_col", exception_col))
         self.validate_elem_frac_length()
         self.elemental_set: set = self.elemental_stats()
 
     def validate_elem_frac_length(self):
-        assert self.dataframe.apply(
+        assert self.df.apply(
             lambda x: (len(x["elements"])==len(x["elements_fraction"])), axis=1).all(),\
-            self.dataframe.loc[self.dataframe.apply(
+            self.df.loc[self.df.apply(
             lambda x: len(x["elements"])!=len(x["elements_fraction"]), axis=1)]
     
     def split(self,
@@ -293,7 +310,7 @@ class Dataset(D2TableDataset):
               shuffle: bool = True, seed: int = 42,
               to_numpy: bool = False) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """process target and split.        """
-        target_df = process_targets(self.dataframe, targets = self.config["targets"])
+        target_df = process_targets(self.df, targets = self.config["targets"])
         raise NotImplementedError
         
         target_df = target_df.reset_index(drop=True)

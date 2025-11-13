@@ -9,8 +9,8 @@ import re
 # --- EDIT THESE PATHS / KEY ---
 OLD = r"C:\Users\chyi\draftsh2025\temp_devs\merged_dataset_0917.csv"
 NEW = r"C:\Users\chyi\draftsh2025\temp_devs\merged_dataset_forward.csv"
-KEY_COL = "index_0810"   # your unique key column
-OUT_PATH = "temp_devs\\0917to0918.html"
+KEY_COL = "index"   # your unique key column
+OUT_PATH = "temp_devs\\asdf.html"
 
 # ---------- load & normalize ----------
 old: pd.DataFrame = pd.read_csv(OLD, dtype=str, keep_default_na=False).applymap(str.strip)
