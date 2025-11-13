@@ -29,54 +29,58 @@ class XuTestHEA(D2TableDataset):
             xls_path = path
 
         super().__init__(xls_path=xls_path, notebook="Sheet1", exception_col=None,
-                         parse_frac_col=False, parse_elem_col=False, gen_pymatgen_comps_col=False)
+                         parse_frac_col=False, parse_elem_col=False,
+                         gen_pymatgen_comps_col=False, index_col="xu_index")
         elem_list=[]
         frac_list=[]
-        for _, row in self.dataframe.iterrows():
+        for _, row in self.df.iterrows():
             comp=Composition(row["formula"])
             elem_list.append(comp.as_data_dict()["elements"])
             frac_list.append(
                 [comp.get_atomic_fraction(comp.as_data_dict()["elements"][i])
                  for i in list(range(comp.as_data_dict()["nelements"]))])
-        self.dataframe["elements"]=elem_list
-        self.dataframe["elements_fraction"]=frac_list
+        self.df["elements"]=elem_list
+        self.df["elements_fraction"]=frac_list
         self.pymatgen_comps()
 
-class StanevSuperCon(BaseDataset):
+class StanevSuperCon(D2TableDataset):
     """load processed SuperCon csv from Stanev et al. 2018
 
     preprocess:
         * see `src\hsdu\data\miscs\preprocess_supercon.py`
-        * note that Tc_upper_bound is hard coded, because it is close to the 5213 entries of xu et al
+        * note that treshold_max_tc is hard coded, because it is close to the 5213 entries of xu et al
     """
-    def __init__(self, drop_cols = None, exception_col = None, maxlen: Optional[int] = None):
-        super().__init__(data_path=None, drop_cols=drop_cols, exception_col=exception_col)
-        self.maxlen = maxlen
-        self.load_data()
+    def __init__(self, drop_cols = None, exception_col = None,
+                 maxlen: Optional[int] = None, treshold_max_tc=12):
+        with resources.as_file(resources.files("hsdu.data.miscs") /"preprocessed_supercon.csv") as path:
+            super().__init__(xls_path=path, drop_cols=drop_cols,
+                            exception_col=exception_col,
+                            index_col="index",
+                            parse_frac_col=False, parse_elem_col=False,
+                            gen_pymatgen_comps_col=False)
+        
         elem_list=[]
         frac_list=[]
         drop_rows=[]
         
-        for idx, row in self.dataframe.iterrows():
-            if row["Tc"]>12:
-                drop_rows
-            try:
-                comp=Composition(row["name"])
-                row_fracs =[comp.get_atomic_fraction(comp.as_data_dict()["elements"][i])
-                    for i in list(range(comp.as_data_dict()["nelements"]))]
-                elem_list.append(comp.as_data_dict()["elements"])
-                frac_list.append(row_fracs)
-            except:
+        for idx, row in self.df.iterrows():
+            if row["Tc"]>treshold_max_tc:
                 drop_rows.append(idx)
-        self.dataframe = self.dataframe.drop(index=drop_rows, axis=0)
-        self.dataframe["elements"]=elem_list
-        self.dataframe["elements_fraction"]=frac_list
-        self.dataframe: pd.DataFrame = self.dataframe.reset_index(drop=True)
-        
-    def load_data(self):
-        with resources.as_file(resources.files("hsdu.data.miscs") /"preprocessed_supercon.csv") as path:
-            self.dataframe = pd.read_csv(path, nrows = self.maxlen)
-        return self.dataframe
+            else:
+                try:
+                    comp=Composition(row["name"])
+                    row_fracs =[comp.get_atomic_fraction(comp.as_data_dict()["elements"][i])
+                        for i in list(range(comp.as_data_dict()["nelements"]))]
+                    elem_list.append(comp.as_data_dict()["elements"])
+                    frac_list.append(row_fracs)
+                except:
+                    drop_rows.append(idx)
+        self.df = self.df.drop(index=drop_rows, axis=0)
+        self.df["elements"]=elem_list
+        self.df["elements_fraction"]=frac_list
+        self.pymatgen_comps()
+        self.df: pd.DataFrame = self.df.reset_index(drop=True)
+
         
 class XuDataset():
     """Reproduced XuDataset
@@ -97,18 +101,18 @@ if __name__=="__main__":
         7:324,  # (nominal - dendrite_phase) xu(7)->319 in `index_0810`. `sample C5`
         20:326, # (nominal - dendrite_phase) xu(20)->321 in `index_0810``
     }
-    xu_test.pymatgen_duplicates(dataset.dataframe, rtol=0.1, save_dir="temp_devs/xu_to_0918_duplicates_rtol0_1.json", exception_map=exception_map)
-    for i in range(len(xu_test.dataframe)):
+    xu_test.pymatgen_duplicates(dataset.df, rtol=0.1, save_dir="temp_devs/xu_to_0918_duplicates_rtol0_1.json", exception_map=exception_map)
+    for i in range(len(xu_test.df)):
         print(list(xu_test.duplicated_comps_group[i].keys())[:-1])
     # print index_0810    
-    for i in range(len(xu_test.dataframe)):
+    for i in range(len(xu_test.df)):
         index_0810s=[]
         for key in xu_test.duplicated_comps_group[i].keys():
             if isinstance(key, int):
-                if pd.isna(dataset.dataframe.loc[key, 'index_0810']):
+                if pd.isna(dataset.df.loc[key, 'index_0810']):
                     index_0810s.append("new_0918")
                 else:
-                    index_0810s.append(int(dataset.dataframe.loc[key, 'index_0810']))
+                    index_0810s.append(int(dataset.df.loc[key, 'index_0810']))
         print(index_0810s)
 
     # revert dictionary
@@ -118,6 +122,7 @@ if __name__=="__main__":
             if isinstance(k1, int):
                 idx0918_to_xu_test[k1]=k
             
-    for i in range(len(dataset.dataframe)):
+    for i in range(len(dataset.df)):
         print(idx0918_to_xu_test.get(i, "false"))
     a=[1234,534] #placeholder..
+# %%

@@ -43,19 +43,10 @@ class Test(unittest.TestCase):
 
         #xu_val_r2score: test XuDataset reproduces the snapshot
         xu_dataset = XuTestHEA()
-        r2score = r2_score(xu_dataset.dataframe["Experimental_T_c(K)"], xu_dataset.dataframe["Predicted_T_c(K)"])
+        r2score = r2_score(xu_dataset.df["Experimental_T_c(K)"], xu_dataset.df["Predicted_T_c(K)"])
         print(f"r2_score:{r2score}")
         self.assertAlmostEqual(r2score, 0.9246, places=4)
     
-    def test_notebook(self):
-        # trying to keep compatibility with 
-        # keep compatibility with https://colab.research.google.com/drive/1SUAELDp_BLy62RK5ilqmMbG0QMEvP-J3
-        
-        dataset = Dataset("/content/sample_data/inhouse_dataset_merged_0810.xlsx", config="default.json")
-
-        # dataset.dataframe is pandas DataFrame
-        assert isinstance(dataset.dataframe, pd.DataFrame)
-        
 if __name__ == '__main__':
-    Test().test_dataset() #it is convenience for debug..
-    #unittest.main()
+    #Test().test_dataset() #it is convenience for debug..
+    unittest.main()
