@@ -29,7 +29,7 @@ class Test(unittest.TestCase):
         # load dataset
         with resources.as_file(resources.files("hsdu.data.tests") /"test_dataset.csv") as path:
             test_dataset_path = path
-        dataset = Dataset(test_dataset_path, config="default.json")
+        dataset = Dataset(test_dataset_path, config="default_forward.json")
 
         # load stanev's supercon dataset 
         ss_dataset = StanevSuperCon()

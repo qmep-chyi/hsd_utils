@@ -164,8 +164,8 @@ class BaseDataset(ABC):
                         print(f"while norm_fracs(comp):{norm_fracs(comp)}, norm_fracs_comps_pymatgen:{norm_fracs(row['comps_pymatgen'])}")
 
                     
-    def add_duplicated_comps_column(self, criteria_rule: Literal['single_ref'], inplace=True):
-        assert criteria_rule in ['single_ref'], NotImplementedError(criteria_rule)
+    def add_duplicated_comps_column(self, criteria_rule: str, inplace=True):
+        assert criteria_rule in ['single_ref', 'dataset'], NotImplementedError(criteria_rule)
         duplicate_groups=[] # will be a new column, group name = first instance idx(in self.dataset.duplicated_comps_group.keys)
         for idx0, row0 in self.df.iterrows():
             group_row=np.nan

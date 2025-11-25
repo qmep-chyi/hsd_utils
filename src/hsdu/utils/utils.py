@@ -13,7 +13,7 @@ from itertools import product
 import pandas as pd
 import numpy as np
 
-def config_parser(config: str | dict | Path, mode: Literal["dataset", "feature", "convert"]):
+def config_parser(config: str | dict | Path, mode: Literal["dataset", "featurize", "convert"]):
     """
     load and parse config
     """
