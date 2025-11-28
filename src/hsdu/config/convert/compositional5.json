@@ -22,5 +22,6 @@
     "output_dir": "temp_devs/",
     "save_compositional5_dir":"temp_devs/compositional5.csv",
     "save_log_dir": "temp_devs/compositional5.log.json",
-    "keep_merged_dataset_index": "idx_0918"
+    "keep_original_index_as": "idx_0918",
+    "keep_original_index_from": "index"
 }

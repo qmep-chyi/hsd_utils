@@ -1,0 +1,14 @@
+{
+    "exceptions":null,
+    "keep_cols_from_dataset": [
+        "elements",
+        "elements_fraction"
+    ],
+    "drop_cols_after_merge_duplicates":[],
+    "dataset_config": "default_forward.json",
+    "output_dir": "temp_devs/",
+    "save_compositional5_dir": "compositional5_ss.csv",
+    "save_log_dir": "compositional5_ss.log.json",
+    "keep_original_index_as": "index",
+    "keep_original_index_from": null
+}

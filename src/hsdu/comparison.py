@@ -17,7 +17,9 @@ from typing import Optional
 import pandas as pd
 from pymatgen.core.composition import Composition
 
-from hsdu.dataset import D2TableDataset, BaseDataset, Dataset
+from hsdu.dataset import D2TableDataset, Dataset
+from hsdu.utils.utils import config_parser
+
 
 class XuTestHEA(D2TableDataset):
     """reproduce test HEA set of Xu et al. 2025.
@@ -44,13 +46,15 @@ class XuTestHEA(D2TableDataset):
         self.pymatgen_comps()
 
 class StanevSuperCon(D2TableDataset):
-    """load processed SuperCon csv from Stanev et al. 2018
+    """load preprocessed SuperCon csv 
+    
+    * Preprocessed SuperCon table from Stanev et al. (2018)
 
     preprocess:
         * see `src\hsdu\data\miscs\preprocess_supercon.py`
         * note that treshold_max_tc is hard coded, because it is close to the 5213 entries of xu et al
     """
-    def __init__(self, drop_cols = None, exception_col = None,
+    def __init__(self, drop_cols = None, config = None, exception_col = None,
                  maxlen: Optional[int] = None, treshold_max_tc=12):
         with resources.as_file(resources.files("hsdu.data.miscs") /"preprocessed_supercon.csv") as path:
             super().__init__(xls_path=path, drop_cols=drop_cols,
@@ -75,19 +79,12 @@ class StanevSuperCon(D2TableDataset):
                     frac_list.append(row_fracs)
                 except:
                     drop_rows.append(idx)
+        self.config=config_parser(config, "dataset")
         self.df = self.df.drop(index=drop_rows, axis=0)
         self.df["elements"]=elem_list
         self.df["elements_fraction"]=frac_list
         self.pymatgen_comps()
         self.df: pd.DataFrame = self.df.reset_index(drop=True)
-
-        
-class XuDataset():
-    """Reproduced XuDataset
-
-    1. Data collection and cleaning
-    """
-    pass
 
 if __name__=="__main__":
     # -----search xu2025 composition formula on merged dataset, check duplicated--------
@@ -125,4 +122,3 @@ if __name__=="__main__":
     for i in range(len(dataset.df)):
         print(idx0918_to_xu_test.get(i, "false"))
     a=[1234,534] #placeholder..
-# %%
