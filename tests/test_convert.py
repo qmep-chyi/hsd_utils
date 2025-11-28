@@ -56,4 +56,42 @@ class Test(unittest.TestCase):
     
 if __name__ == '__main__':
     #Test().test_dataset() #it is convenience for debug..
-    unittest.main()
+    #unittest.main()
+    if True:
+        from pathlib import Path
+
+        import pandas as pd
+
+        from hsdu.dataset import Dataset, D2TableDataset
+
+        # load dataset
+        merged_dataset_path=Path(r"C:\Users\chyi\hsd_utils\temp_devs\additional_instance17OCT.csv")
+
+        # generate cleaned datatable
+        from hsdu.convert.utils import Converter 
+        converter = Converter(merged_dataset_path, "compositional5_merge2maxTc_wholedataset.json")
+        converter.convert(make_dir=True, exist_ok=True)
+
+        # featurize from cleand datatable
+        from hsdu.dataset import D2TableDataset
+        from hsdu.convert.feature import  MultiSourceFeaturizer
+        dataset = D2TableDataset(converter.save_compositional5_pth, exception_col=None)
+        dataset.pymatgen_comps()
+
+        featurizer=MultiSourceFeaturizer(config="xu.json")
+        featurized_df = featurizer.featurize_all(dataset.df, merge_both=True, save_file="test_featurized_table.csv")
+    if False:
+        from hsdu.comparison import XuTestHEA, StanevSuperCon
+        from hsdu.convert.utils import Converter 
+        ss_dataset = StanevSuperCon(config="ss.json")
+        converter = Converter(ss_dataset, "comp5_ss.json")
+        converter.convert(make_dir=True, exist_ok=True, simple_target=True)
+
+        #%%
+        from hsdu.dataset import D2TableDataset
+        from hsdu.convert.feature import  MultiSourceFeaturizer
+        dataset = D2TableDataset(converter.save_compositional5_pth, exception_col=None)
+        dataset.pymatgen_comps()
+
+        featurizer=MultiSourceFeaturizer(config="xu.json")
+        featurized_df = featurizer.featurize_all(dataset.df, merge_both=True, save_file="test_featurized_table.csv")

@@ -579,13 +579,13 @@ class CustomPropertyStats(PropertyStats):
     
     def ap_maximum(self, data_lst, weights = None):
         aps, ap_weights = self.call_ap(data_lst, weights)
-        if weights is not None:
+        if ap_weights is not None:
             aps = np.multiply(aps, ap_weights)
         return PropertyStats.maximum(data_lst=aps, weights=weights)
     
     def ap_minimum(self, data_lst, weights = None):
         aps, ap_weights = self.call_ap(data_lst, weights)
-        if weights is not None:
+        if ap_weights is not None:
             aps = np.multiply(aps, ap_weights)
         return PropertyStats.minimum(data_lst=aps, weights=weights)
     

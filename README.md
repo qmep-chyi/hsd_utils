@@ -1,4 +1,5 @@
 # Utils for HS dataset
+***Repository for collaboration, not for public share yet***
 ## Notes
 ### 24 Nov. Reverting abandoned features
 * (trying) optional installation via `poetry install --with convert` or `poetry sync --with convert`
@@ -34,7 +35,7 @@ devloped environment: windows 11, python==3.13, poetry version 2.1.4
 ### Load in-house dataset
 Load latest in-house dataset as a `pandas.DataFrame`,
 get featurized dataset as pandas.DataFrame.  
-*dataset is not here. download from (private) google drive.*
+*dataset is not here. download at (private) google drive.*
 
 ```python
 from hsdu.dataset import Dataset
@@ -46,47 +47,57 @@ assert isinstance(hsd.df, pd.DataFrame)
 ```
 
 ### Convert tables and Featurize
-***Tests required. just copy of the old version***
+***Should install optional(`convert`) requirements, see `Installation`***
 
-#### get datatable to generate compositional feature
-* clean some inhomogeneous entries
-* merge $T_c$ and entries with too close composition
+* get cleaned datatable to generate compositional feature
+    * clean some inhomogeneous entries
+    * merge multiple $T_c$s from multiple measurement
+    * merge entries with too close composition
+* then featurize, 
+    * get datatable with massive features(450 columns for input.)
 ```python
-from draftsh.convert.utils import Converter 
-converter = Converter(path_to_merged_dataset, "compositional5_temp_nonSC.json", output_dir="./")
-converter.convert()
-```
+import importlib.resources as resources
+from pathlib import Path
 
-#### get featurized datatable
-* featurize, get datatable with massive features(450 columns for input.)
-
-```python
-# featurize_from_5cols_0922.py
-from draftsh.dataset import D2TableDataset
-from draftsh.feature import Featurizer, MultiSourceFeaturizer
-from draftsh.utils.utils import merge_dfs
 import pandas as pd
-dataset = D2TableDataset(r"C:\Users\chhyyi\git_repos\draftsh2025\temp_devs\compositional5.csv", exception_col=None)
+from sklearn.metrics import r2_score
+
+from hsdu.dataset import Dataset, D2TableDataset
+
+# load dataset
+merged_dataset_path="some_path"
+
+# generate cleaned datatable
+from hsdu.convert.utils import Converter 
+converter = Converter(merged_dataset_path, "compositional5_merge2maxTc_wholedataset.json")
+converter.convert(make_dir=True, exist_ok=True)
+
+# featurize from cleand datatable
+from hsdu.dataset import D2TableDataset
+from hsdu.convert.feature import  MultiSourceFeaturizer
+dataset = D2TableDataset(converter.save_compositional5_pth, exception_col=None)
 dataset.pymatgen_comps()
 
 featurizer=MultiSourceFeaturizer(config="xu.json")
-featurized_df = featurizer.featurize_all(dataset.df, merge_both=True, save_file="featurized_temp_nonsc.csv")
-
+featurized_df = featurizer.featurize_all(dataset.df, merge_both=True, save_file="test_featurized_table.csv")
 ```
 
 ### Load datatables of previous study for comparison
+***not tested after re-init***
 * `hsdu.comparison.XuTestHEA()`: the validation data [Xu 2025(paper)](https://journal.hep.com.cn/fop/EN/10.15302/frontphys.2025.014205) employed, in supplements.
-* `hsdu.comparison.StanevSuperCon()`: Preprocessed [Supercon data](https://github.com/vstanev1/Supercon/blob/master/Supercon_data.csv), mimic train set of Xu 2025. See [preprocess_supercon.md](src\hsdu\data\miscs\preprocess_supercon.md) for details.
-* `hsdu.comparison.KitagawaDataset()`: It is the validation data Xu 2025 employed, in supplements.
+* `hsdu.comparison.StanevSuperCon()`: Preprocessed [Supercon data](https://github.com/vstanev1/Supercon/blob/master/Supercon_data.csv), like train set of Xu 2025. See [preprocess_supercon.md](src\hsdu\data\miscs\preprocess_supercon.md) for details.
+* `hsdu.comparison.KitagawaTables()`: Not Implemented yet
+* `hsdu.comparison.CayadoTables()`: Not Implemented yet
 ```python
-from hsdu.comparison import XuTestHEA, StanevSuperCon, KitagawaDataset
 from sklearn.metrics import r2_score
-xu_dataset = comparison.XuDataset()
-print(r2_score(xu_dataset["T_c(K)"], xu_dataset["pred_T_c(K)"]))
+import pandas as pd
+
+from hsdu.comparison import XuTestHEA, StanevSuperCon
+
+xu_dataset = XuTestHEA()
+print(r2_score(xu_dataset.df["Experimental_T_c(K)"], xu_dataset.df["Predicted_T_c(K)"]))
 
 ss_dataset = StanevSuperCon()
 assert isinstance(ss_dataset.df, pd.DataFrame)
-
-kitagawa_dataset = KitagawaDataset()
-assert isinstance(kitagawa_dataset.df, pd.DataFrame)
+print(isinstance(ss_dataset.df.loc[0, "elements_fraction"][0], float))
 ```

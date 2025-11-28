@@ -105,7 +105,7 @@ class TcMerger():
             
 
 class Converter():
-    def __init__(self, data_path, convert_config, test:bool = False, output_dir:str|None=None) -> None:
+    def __init__(self, data, convert_config, test:bool = False, output_dir:str|None=None, validate_by_comps:bool=True) -> None:
         self.config = config_parser(config=convert_config, mode="convert")
         if self.config.get("output_dir") is not None and output_dir is not None:
             raise NameError("two `output_dir` from config file and args")
@@ -117,12 +117,16 @@ class Converter():
                 self.config.get("save_log_dir", "compositional5.log.json"))
         self.log={} # temporal logging dict..
         self.log['command_line_args']={
-            "data_path":str(data_path),
+            "data_path":str(data) if isinstance(data, (str, Path)) else str(data.dset_path),
             "convert_config":convert_config,
             "test":test}
         self.log["config"]=self.config.copy()
-        self.dataset = Dataset(data_path, self.config['dataset_config'])
-        self.dataset.validate_by_composition()
+        if isinstance(data, (str, Path)):
+            self.dataset = Dataset(data, self.config['dataset_config'])
+        else:
+            self.dataset = data
+        if validate_by_comps:
+            self.dataset.validate_by_composition()
         if self.config.get("duplicates_rule") is not None:
             self.dataset.pymatgen_duplicates(rtol=0.02)
             self.log["duplicated_comps"]=self.dataset.duplicated_comps_group
@@ -131,8 +135,8 @@ class Converter():
         self.converted_df: pd.DataFrame
 
 
-    def convert(self, make_dir=False, exist_ok=False):
-        out_df=self.convert_tables(self.dataset)
+    def convert(self, make_dir=False, exist_ok=False, simple_target=False):
+        out_df=self.convert_tables(self.dataset, simple_target=simple_target)
         if self.test:
             from io import StringIO
             buffer = out_df.to_csv(index=False)
@@ -149,34 +153,44 @@ class Converter():
         else:
             self.converted_df = out_df
     
-    def convert_tables(self, dataset: Dataset):
+    def convert_tables(self, dataset: Dataset, simple_target=False):
         config=self.config
         targets=dataset.config["targets"]
-
-        if config["exceptions"]["tc"]["non_sc_observed"]==True:
-            non_sc_rule="nan"
-        elif config["exceptions"]["tc"]["non_sc_observed"]=="old":
-            non_sc_rule="old"
+        exceptions=config.get("exceptions")
+        if exceptions is None:
+            pass
         else:
-            raise ValueError(config["exceptions"]["tc"]["non_sc_observed"])
+            if exceptions["tc"]["non_sc_observed"]==True:
+                non_sc_rule="nan"
+            elif exceptions["tc"]["non_sc_observed"]=="old":
+                non_sc_rule="old"
+            else:
+                raise ValueError(exceptions["tc"]["non_sc_observed"])
 
-        target_df = process_targets(
-            df=dataset.df,
-            targets=targets,
-            return_num_tcs=True,
-            exception_row=None,
-            non_sc_rule=non_sc_rule)
+        if not simple_target:
+            target_df = process_targets(
+                df=dataset.df,
+                targets=targets,
+                return_num_tcs=True,
+                exception_row=None,
+                non_sc_rule=non_sc_rule)
+        elif simple_target:
+            target_df=dataset.df[targets]
         
         out_df = merge_dfs(target_df, dataset.df.loc[:,config["keep_cols_from_dataset"]])
-        if config.get("keep_merged_dataset_index") is None:
+        if config.get("keep_original_index_from") is None:
             # reset index
-            out_df[config["keep_merged_dataset_index"]]=list(range(len(out_df)))
+            out_df[config["keep_original_index_as"]]=list(range(len(out_df)))
         else:
-            out_df[config["keep_merged_dataset_index"]]=dataset.df["index"]
+            out_df[config["keep_original_index_as"]]=dataset.df[config["keep_original_index_from"]]
         if config.get("duplicates_rule") is not None:
             out_df = self.merge_duplicates(config, out_df, targets)
         out_df = out_df.drop(columns=config["drop_cols_after_merge_duplicates"])
-        out_df = self.exclude_exceptions(config, out_df)
+        
+        if config.get("exceptions") is None:
+            pass
+        else:
+            out_df = self.exclude_exceptions(config, out_df)
         return out_df
     
     def merge_duplicates(self, config, out_df: pd.DataFrame, targets):
