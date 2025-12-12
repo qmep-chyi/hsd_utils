@@ -52,12 +52,14 @@ class Test(unittest.TestCase):
         Path("test_featurized_table.csv").unlink()
         
         
-
+TEMP_TEST_FEATURIZE=False
+TEMP_TEST_COMPARISON_TABLES=False
     
 if __name__ == '__main__':
     #Test().test_dataset() #it is convenience for debug..
     #unittest.main()
-    if True:
+
+    if TEMP_TEST_FEATURIZE:
         from pathlib import Path
 
         import pandas as pd
@@ -80,7 +82,7 @@ if __name__ == '__main__':
 
         featurizer=MultiSourceFeaturizer(config="xu.json")
         featurized_df = featurizer.featurize_all(dataset.df, merge_both=True, save_file="test_featurized_table.csv")
-    if False:
+    if TEMP_TEST_COMPARISON_TABLES:
         from hsdu.comparison import XuTestHEA, StanevSuperCon
         from hsdu.convert.utils import Converter 
         ss_dataset = StanevSuperCon(config="ss.json")
