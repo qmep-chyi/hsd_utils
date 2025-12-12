@@ -97,7 +97,7 @@ from hsdu.comparison import XuTestHEA, StanevSuperCon
 xu_dataset = XuTestHEA()
 print(r2_score(xu_dataset.df["Experimental_T_c(K)"], xu_dataset.df["Predicted_T_c(K)"]))
 
-ss_dataset = StanevSuperCon()
+ss_dataset = StanevSuperCon(config="ss.json")
 assert isinstance(ss_dataset.df, pd.DataFrame)
 print(isinstance(ss_dataset.df.loc[0, "elements_fraction"][0], float))
 ```

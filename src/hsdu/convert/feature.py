@@ -499,9 +499,9 @@ class CustomPropertyStats(PropertyStats):
         iter all data pairs in data_list: list[float]
 
         weights_rule = "temp": is arbitraly chosen one, to reproduce xu et al (2025)
-            * $min_{i<j}(w_{ij} AP_{ij})$, where $w_{ij} = \frac{x_i x_j}{sum_{p<q}{x_p x_q}}$
-            * I don't think AP_miminum is reasonable but if I ignore weight,
-                just 2 same number will be generated(weighted, unweighted).
+            * $min_{i<j}(w_{ij} AP_{ij})$, where $w_{ij} = \frac{x_i x_j}{\frac{x_p+x_q}{2}}$
+            * I don't think AP_miminum is a rational descriptor but if I ignore weight,
+                just 2 same number will be generated(weighted, unweighted) so more redundant.
         """
         if weights_rule!="temp":
             raise NotImplementedError
