@@ -468,6 +468,7 @@ class CustomPropertyStats(PropertyStats):
         if (data_lst, weights) == self.init_ap_inputs:
             pass
         else:
+            self.init_ap_inputs = (data_lst, weights)
             self.all_aps = self.init_all_aps(data_lst, weights, weights_rule = weights_rule)
         return self.all_aps
 
@@ -571,8 +572,39 @@ class CustomPropertyStats(PropertyStats):
     @staticmethod
     def ionicity(data_lst, weights):
         assert weights is not None
+
+    @staticmethod
+    def minimum(data_lst, weights):
+        """
+        override for weighted case, returning minimum of (weight_i*data_i)
+
+        as PropertyStats.minimum always ignores weights
+        """
+        if weights is not None:
+            data_lst = np.multiply(data_lst, weights)
+        return PropertyStats.minimum(data_lst=data_lst, weights=None)
+
+    @staticmethod
+    def maximum(data_lst, weights):
+        """
+        override for weighted case, returning minimum of (weight_i*data_i)
+
+        as PropertyStats.minimum always ignores weights
+        """
+        if weights is not None:
+            data_lst = np.multiply(data_lst, weights)
+        return PropertyStats.maximum(data_lst=data_lst, weights=None)
+    @staticmethod
+    def range(data_lst, weights):
+        """
+        override for weighted case, returning minimum of (weight_i*data_i)
+
+        as PropertyStats.minimum always ignores weights
+        """
+        if weights is not None:
+            data_lst = np.multiply(data_lst, weights)
+        return PropertyStats.range(data_lst=data_lst, weights=None)
         
-    
     def ap_mean(self, data_lst, weights = None):
         aps, ap_weights = self.call_ap(data_lst, weights)
         return np.average(aps, weights=ap_weights)
