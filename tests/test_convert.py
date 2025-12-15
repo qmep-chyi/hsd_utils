@@ -51,14 +51,17 @@ class Test(unittest.TestCase):
         converter.save_log_pth.unlink()
         Path("test_featurized_table.csv").unlink()
         
-        
-TEMP_TEST_FEATURIZE=False
-TEMP_TEST_COMPARISON_TABLES=False
+
     
 if __name__ == '__main__':
     #Test().test_dataset() #it is convenience for debug..
     #unittest.main()
+        
+    # old test codes; to be refactored
+    TEMP_TEST_FEATURIZE=False
+    TEMP_TEST_COMPARISON_TABLES=False
 
+    
     if TEMP_TEST_FEATURIZE:
         from pathlib import Path
 
