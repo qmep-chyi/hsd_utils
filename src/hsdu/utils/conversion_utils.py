@@ -103,7 +103,7 @@ def process_targets(
                     raise ValueError(f"exception: Tc(K):{val}, type:{type(val)} on {key} is not a string, not nan\nrow_idx: {row_idx}, comp:{row.get("comps_pymatgen", "unknown comps")}, tcs:{tcs}, not_passed_tc_cols: {[row[ex_col] for ex_col in not_none_tc_cols]}")
             except:
                 not_none_tc_cols.append(key)
-                if val=='Non-superconducting' or isinstance(ast.literal_eval(val), dict):
+                if val in ['Non-superconducting', 'non-SC'] or isinstance(ast.literal_eval(val), dict):
                     warnings.warn(f"skip row: Tc(K):{val}, type:{type(val)} on {key} is not a string, not nan\nrow_idx: {row_idx}, comp:{row.get("comps_pymatgen", "unknown comps")}, tcs:{tcs}, not_passed_tc_cols: {[row[ex_col] for ex_col in not_none_tc_cols]}")
                 else:
                     raise ValueError(f"exception: {val}, type:{type(val)}, pd.isna{pd.isna(val)}, row_idx: {row_idx}, comp:{row.get("comps_pymatgen", "unknown comps")}")
