@@ -58,7 +58,7 @@ if __name__ == '__main__':
     #unittest.main()
         
     # old test codes; to be refactored
-    TEMP_TEST_FEATURIZE=False
+    TEMP_TEST_FEATURIZE=True
     TEMP_TEST_COMPARISON_TABLES=False
 
     
@@ -70,7 +70,7 @@ if __name__ == '__main__':
         from hsdu.dataset import Dataset, D2TableDataset
 
         # load dataset
-        merged_dataset_path=Path(r"C:\Users\chyi\hsd_utils\temp_devs\additional_instance17OCT.csv")
+        merged_dataset_path=Path(r"C:\Users\chyi\hsd_utils\temp_devs\hesc_dataset_16dec2025 - DataTable.csv")
 
         # generate cleaned datatable
         from hsdu.convert.utils import Converter 
@@ -84,7 +84,7 @@ if __name__ == '__main__':
         dataset.pymatgen_comps()
 
         featurizer=MultiSourceFeaturizer(config="xu.json")
-        featurized_df = featurizer.featurize_all(dataset.df, merge_both=True, save_file="test_featurized_table.csv")
+        featurized_df = featurizer.featurize_all(dataset.df, merge_both=True, save_file="featurized_table_16dec2025.csv")
     if TEMP_TEST_COMPARISON_TABLES:
         from hsdu.comparison import XuTestHEA, StanevSuperCon
         from hsdu.convert.utils import Converter 
