@@ -1,6 +1,6 @@
 [project]
 name = "hsdu"
-version = "0.1.0"
+version = "0.1.1"
 description = "Add your description here"
 authors = [
     {name = "changhyun yi",email = "chhyyi@gmail.com"}
@@ -21,3 +21,6 @@ dependencies = [
 convert = [
     "matminer>=0.9.3",
 ]
+
+[tool.uv.build-backend]
+data = { data = ["config", "data"]}
