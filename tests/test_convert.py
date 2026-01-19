@@ -15,10 +15,9 @@ import importlib.resources as resources
 from pathlib import Path
 
 import pandas as pd
-from sklearn.metrics import r2_score
 
-from hsdu.dataset import Dataset, D2TableDataset
-from hsdu.comparison import XuTestHEA, StanevSuperCon
+from hsdu.dataset import D2TableDataset
+from hsdu.comparison import StanevSuperCon
 
 class Test(unittest.TestCase):
     """Test core class methods"""

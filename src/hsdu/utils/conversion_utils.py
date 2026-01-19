@@ -4,14 +4,12 @@ utility functions to convert datatables.
 Todo: refactor process_target(too long)
 """
 from typing import Optional
+import ast
 
 import pandas as pd
 import numpy as np
-from hsdu.parsers import parse_value_with_uncertainty
+from hsdu.parsers import parse_value_with_uncertainty, InvalidTcException
 from pymatgen.core import Composition
-
-import ast
-import warnings
 
 def norm_fracs(comp: Composition | str, elems: Optional[list]=None, norm:bool=True):
     if isinstance(comp, str):
@@ -60,7 +58,8 @@ def process_targets(
         exception_row: Optional[str] = "Exceptions",
         valid_targets: tuple[str, ...] = ("avg_Tc", "max_Tc", "std_Tc", "min_Tc"),
         return_num_tcs: bool=False,
-        tc_cols=("Tc(K).resistivity.mid", "Tc(K).magnetization.mid", "Tc(K).resistivity.None", "Tc(K).magnetization.onset", "Tc(K).magnetization.None", "Tc(K).resistivity.zero", "Tc(K).specific_heat.mid", "Tc(K).other.None", "Tc(K).resistivity.onset", "Tc(K).specific_heat.onset", "Tc(K).specific_heat.None", "Tc(K).magnetization.zero", "Tc(K).other.onset", "Tc(K).other.mid", "Tc(K).specific_heat.zero")
+        tc_cols=("Tc(K).resistivity.mid", "Tc(K).magnetization.mid", "Tc(K).resistivity.None", "Tc(K).magnetization.onset", "Tc(K).magnetization.None", "Tc(K).resistivity.zero", "Tc(K).specific_heat.mid", "Tc(K).other.None", "Tc(K).resistivity.onset", "Tc(K).specific_heat.onset", "Tc(K).specific_heat.None", "Tc(K).magnetization.zero", "Tc(K).other.onset", "Tc(K).other.mid", "Tc(K).specific_heat.zero"),
+        process_dict: bool=False
         ) -> pd.DataFrame:
     """process targets, return a new pd.DataFrame
     
@@ -80,33 +79,25 @@ def process_targets(
         not_none_tc_cols=[]
         for key in tc_cols:
             val=row[key]
-            try:
-                if type(val)==str:
-                    if "<" in val: # non-SC observed on measure
-                        pass
-                    elif "≈" in val or "~" in val:
-                        val=val.replace("≈","")
-                        val=val.replace("~","")
-                        tcs.append(parse_value_with_uncertainty(val))
-                        not_none_tc_cols.append(key)
-                    else:
-                        tcs.append(parse_value_with_uncertainty(val))
-                        not_none_tc_cols.append(key)
-                elif pd.isna(val):
-                    pass
-                    #tcs.append(parse_value_with_uncertainty(str(val)))
-                    #not_passed_tc_cols.append(key)
-                elif type(val)==float or type(val)==int:
-                    tcs.append(parse_value_with_uncertainty(str(val)))
+            if val is None or pd.isna(val):
+                pass # most tc_cols are null.
+            elif isinstance(val, (float, int)):
+                tcs.append(parse_value_with_uncertainty(str(val)))
+                not_none_tc_cols.append(key)
+
+            elif isinstance(val, str):
+                try:
+                    parsed_tc=parse_value_with_uncertainty(val, process_dict=process_dict)
+                except InvalidTcException as e:
+                    e.add_note(f"key: {key} is not a string, not nan. row_idx: {row_idx}, comp:{row.get('comps_pymatgen', 'unknown comps')}, tcs:{tcs}, not_passed_tc_cols: {[row[ex_col] for ex_col in not_none_tc_cols]}, pd.isna: {pd.isna(val)}")
+                    raise e
+                if parsed_tc:
+                    tcs.append(parsed_tc)
                     not_none_tc_cols.append(key)
                 else:
-                    raise ValueError(f"exception: Tc(K):{val}, type:{type(val)} on {key} is not a string, not nan\nrow_idx: {row_idx}, comp:{row.get('comps_pymatgen', 'unknown comps')}, tcs:{tcs}, not_passed_tc_cols: {[row[ex_col] for ex_col in not_none_tc_cols]}")
-            except:
-                not_none_tc_cols.append(key)
-                if val in ['Non-superconducting', 'non-SC'] or (isinstance(val, str) and isinstance(ast.literal_eval(val), dict)):
-                    warnings.warn(f"skip row: Tc(K):{val}, type:{type(val)} on {key} is not a string, not nan\nrow_idx: {row_idx}, comp:{row.get('comps_pymatgen', 'unknown comps')}, tcs:{tcs}, not_passed_tc_cols: {[row[ex_col] for ex_col in not_none_tc_cols]}")
-                else:
-                    raise ValueError(f"exception: {val}, type:{type(val)}, pd.isna{pd.isna(val)}, row_idx: {row_idx}, comp:{row.get('comps_pymatgen', 'unknown comps')}")        
+                    assert parsed_tc is None
+            else:
+                raise TypeError(f"type(val): {type(val)} of val: {val} should be in (float, int, str)")
         # update target_array
         if non_sc_rule=="old":
             row_target_default_mean = 0.1 #0.1 is an arbitrary offset for non_sc

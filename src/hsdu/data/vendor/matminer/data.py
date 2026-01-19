@@ -20,7 +20,6 @@ including ``pymatgen`` and ``Magpie``.
 #import os
 from pathlib import Path
 import warnings
-from glob import glob
 
 import numpy as np
 from pymatgen.core.periodic_table import Element
@@ -115,12 +114,12 @@ class MagpieData(AbstractData, OxidationStatesMixin):
                 if prop == "OxidationStates":
                     nested_props = list(prop_data.values())
                     flatten_props = []
-                    for l in nested_props:
-                        if isinstance(l, list):
-                            for e in l:
+                    for l_item in nested_props:
+                        if isinstance(l_item, list):
+                            for e in l_item:
                                 flatten_props.append(e)
                         else:
-                            flatten_props.append(l)
+                            flatten_props.append(l_item)
 
                     avg_prop = np.round(np.nanmean(flatten_props))
                     for e in Element:

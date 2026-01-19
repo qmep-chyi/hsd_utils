@@ -169,7 +169,7 @@ class Converter():
         if exceptions is None:
             pass
         else:
-            if exceptions["tc"]["non_sc_observed"]==True:
+            if exceptions["tc"]["non_sc_observed"]:
                 non_sc_rule="nan"
             elif exceptions["tc"]["non_sc_observed"]=="old":
                 non_sc_rule="old"

@@ -17,11 +17,16 @@ Todo:
 """
 from abc import ABC, abstractmethod
 from typing import Callable
-import re, math, ast, fractions
+import re
+import math
+import ast
+import fractions
 
 from pymatgen.core.periodic_table import Element
 import pandas as pd
-import numpy as np
+
+class InvalidTcException(Exception):
+    pass
 
 class CellParser(ABC):
     """xlsx cell parser
@@ -120,7 +125,10 @@ class FracParser(CellParser):
 
 # other functions that requires iterate whole data
 
-def parse_value_with_uncertainty(s: str):
+def parse_value_with_uncertainty(s: str, 
+                                 non_sc_strings=['Non-superconducting', 'non-SC'],
+                                 process_dict:bool=False
+                                 ):
     """
     Parse a number string with optional uncertainty in parentheses and return (mean, std).
     Examples:
@@ -129,7 +137,25 @@ def parse_value_with_uncertainty(s: str):
       "-12.0"         -> (-12.0, 1e-1 / sqrt(12))
       "7"             -> (7.0, 1 / sqrt(12))        # rounded to integer
     """
-    s_clean = s.strip()
+    
+
+    #handle exceptions
+    assert not process_dict, NotImplementedError
+    if '"' in s or "'" in s:
+        if isinstance(ast.literal_eval(s), dict):
+            return None
+        else:
+            s=s.replace("'","").replace('"',"")
+    s_clean=s.strip()
+
+    if s_clean[0]=="<":
+        # non-SC observed on measure. currently no usage implemented
+        return None
+    elif s_clean in non_sc_strings:
+        return None
+    elif s_clean[0] in ["≈", "~"]:
+        s_clean=s_clean[1:]
+
     # Extract a trailing "(digits)" if present
     m_unc = re.search(r"\((\d+)\)\s*$", s_clean)
     unc_digits = None
@@ -142,7 +168,7 @@ def parse_value_with_uncertainty(s: str):
     # Split core into mantissa and optional exponent
     m = re.fullmatch(r"([+\-]?(?:\d+(?:\.\d*)?|\.\d+))", s_core)
     if not m:
-        raise ValueError(f"Could not parse numeric value from: {s!r}")
+        raise InvalidTcException(f"Could not parse numeric value from: {s!r}")
 
     mantissa_str = m.group(1)
     exponent = 0
