@@ -101,7 +101,7 @@ class BaseDataset(ABC):
         if other_df is None:
             df1=self.df
         else:
-            assert type(self).__name__=='XuTestHEA', "compare with other_df is implemented only for XuTestHEA"
+            #assert type(self).__name__=='XuTestHEA', "compare with other_df is implemented only for XuTestHEA"
             df1=other_df
         for idx0, row0 in self.df.iterrows():
             if idx0 not in self.duplicated_comps:

@@ -105,6 +105,15 @@ class TcMerger():
             
 
 class Converter():
+    """
+    Parameters
+
+    - validate_by_comps: bool
+        warn (do not modify dataframe), if
+            `composition` strings and parsed columns 
+            (`elements` and `elements_fractions`) are not matched.
+            composition string is parsed by `Composition` from pymatgen.core.composition.
+    """
     def __init__(self, data, convert_config, test:bool = False, output_dir:str|None=None, validate_by_comps:bool=True) -> None:
         self.config = config_parser(config=convert_config, mode="convert")
         if self.config.get("output_dir") is not None and output_dir is not None:
@@ -197,6 +206,7 @@ class Converter():
         """should be ran before self.exclude_exceptions().
 
         modify representative(merged) row, return indices to drop.
+        using `np.allclose(a_fracs, b_fracs, rtol=rtol)`, default rtol=0.1.
         """
         groups=self.dataset.duplicated_comps_group
         criteria_rule = config["duplicates_rule"]["criteria"]
