@@ -56,7 +56,7 @@ def series_comps_gen(el_symbols:list[str], func, inps):
 def process_targets(
         df: pd.DataFrame, 
         targets: list[str],
-        non_sc_rule: str = "old", # "old" or "nan"
+        non_sc_rule: str | None = "old", # "old" or "nan"
         exception_row: Optional[str] = "Exceptions",
         valid_targets: tuple[str, ...] = ("avg_Tc", "max_Tc", "std_Tc", "min_Tc"),
         return_num_tcs: bool=False,
@@ -100,14 +100,13 @@ def process_targets(
                     tcs.append(parse_value_with_uncertainty(str(val)))
                     not_none_tc_cols.append(key)
                 else:
-                    raise ValueError(f"exception: Tc(K):{val}, type:{type(val)} on {key} is not a string, not nan\nrow_idx: {row_idx}, comp:{row.get("comps_pymatgen", "unknown comps")}, tcs:{tcs}, not_passed_tc_cols: {[row[ex_col] for ex_col in not_none_tc_cols]}")
+                    raise ValueError(f"exception: Tc(K):{val}, type:{type(val)} on {key} is not a string, not nan\nrow_idx: {row_idx}, comp:{row.get('comps_pymatgen', 'unknown comps')}, tcs:{tcs}, not_passed_tc_cols: {[row[ex_col] for ex_col in not_none_tc_cols]}")
             except:
                 not_none_tc_cols.append(key)
-                if val in ['Non-superconducting', 'non-SC'] or isinstance(ast.literal_eval(val), dict):
-                    warnings.warn(f"skip row: Tc(K):{val}, type:{type(val)} on {key} is not a string, not nan\nrow_idx: {row_idx}, comp:{row.get("comps_pymatgen", "unknown comps")}, tcs:{tcs}, not_passed_tc_cols: {[row[ex_col] for ex_col in not_none_tc_cols]}")
+                if val in ['Non-superconducting', 'non-SC'] or (isinstance(val, str) and isinstance(ast.literal_eval(val), dict)):
+                    warnings.warn(f"skip row: Tc(K):{val}, type:{type(val)} on {key} is not a string, not nan\nrow_idx: {row_idx}, comp:{row.get('comps_pymatgen', 'unknown comps')}, tcs:{tcs}, not_passed_tc_cols: {[row[ex_col] for ex_col in not_none_tc_cols]}")
                 else:
-                    raise ValueError(f"exception: {val}, type:{type(val)}, pd.isna{pd.isna(val)}, row_idx: {row_idx}, comp:{row.get("comps_pymatgen", "unknown comps")}")
-        
+                    raise ValueError(f"exception: {val}, type:{type(val)}, pd.isna{pd.isna(val)}, row_idx: {row_idx}, comp:{row.get('comps_pymatgen', 'unknown comps')}")        
         # update target_array
         if non_sc_rule=="old":
             row_target_default_mean = 0.1 #0.1 is an arbitrary offset for non_sc
@@ -116,13 +115,13 @@ def process_targets(
             row_target_default_mean = np.nan
             row_target_default_std = np.nan
         else:
-            NotImplemented(non_sc_rule)
+            raise NotImplementedError(f"non_sc_rule: {non_sc_rule}")
         row_target = []
         num_tc_row=len(tcs)
         if return_num_tcs:
             row_target.append(num_tc_row)
         if num_tc_row==0:
-            print(f"no valid tc parsed. assign Tc=0 for row_idx: {row_idx}, comp:{row.get("comps_pymatgen", "unknown comps")}, tcs:{tcs}, not_passed_tc_cols: {[row[ex_col] for ex_col in not_none_tc_cols]}")
+            print(f"no valid tc parsed. assign Tc=0 for row_idx: {row_idx}, comp:{row.get('comps_pymatgen', 'unknown comps')}, tcs:{tcs}, not_passed_tc_cols: {[row[ex_col] for ex_col in not_none_tc_cols]}")
             for target in targets:
                 if target in ("avg_Tc", "max_Tc", "min_Tc"):
                     row_target.append(row_target_default_mean) 
