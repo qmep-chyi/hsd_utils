@@ -8,17 +8,16 @@ from pathlib import Path
 from abc import ABC, abstractmethod
 import importlib.resources as resources
 import string
-from typing import Optional, Literal
+from typing import Optional
 
 import pandas as pd
 import numpy as np
 from pymatgen.core.composition import Composition
 from pymatgen.core.periodic_table import Element
-from sklearn.model_selection import train_test_split
 
 from hsdu.parsers import CellParser, FracParser, ElemParser
 from hsdu.utils.utils import config_parser
-from hsdu.utils.conversion_utils import process_targets, almost_equals_pymatgen_atomic_fraction, norm_fracs
+from hsdu.utils.conversion_utils import almost_equals_pymatgen_atomic_fraction, norm_fracs
 
 
 #from matminer.featurizers.composition import composite
@@ -68,10 +67,10 @@ class BaseDataset(ABC):
         comps_pymatgen = self.df.apply(lambda row: Composition(zip(row["elements"], row["elements_fraction"])), axis=1)
         assert len(comps_pymatgen) == len(self.df)
         if inplace:
-            self.df["comps_pymatgen"] = comps_pymatgen
+            self.df[self.comps_pymatgen_col] = comps_pymatgen
             return None
         else:
-            return self.df["comps_pymatgen"]
+            return self.df[self.comps_pymatgen_col]
         
     def pymatgen_duplicates(self, other_df:Optional[pd.DataFrame]=None, save_dir=None, exception_map:Optional[dict]=None, rtol=0.1, return_dict:bool=True):
         """
@@ -139,23 +138,46 @@ class BaseDataset(ABC):
             with open(save_dir, 'w', encoding="utf-8") as f:
                 json.dump(self.duplicated_comps_group, f, indent=4, ensure_ascii=False)
     
-    def validate_by_composition(self, rtol:float=0.001):
+    def validate_by_composition(self, rtol:float=0.001, 
+                                composition_col="composition"):
+        """compare `composition` column with `comps_pymatgen` column
+
+        try to parse self.df[composition_col] by
+        Composition() from `pymatgen.core.composition`,
+        compare with self.df[self.comps_pymatgen_col].
+
+        Note that it is supplemental validation,
+        while only simple cases are parsed by Composition()
+
+        args:
+            - composition_col:str="composition"
+                - self.df[composition_col]:
+                    the composition string of the source (literature) as is,
+                    may have complex format (e.g. variables like x)
+        """
         allowed = set(string.ascii_letters + string.digits + '.')
         for idx, row in self.df.iterrows():
             comp=None
-            try:
-                if set(row["composition"]) <= allowed:
+            if set(row["composition"]) <= allowed:
+                try:
                     comp=Composition(row["composition"])
-            except:
-                comp=None
+                except ValueError as e:
+                    warnings.warn(f'skip validate by Composition() from \
+                                  `pymatgen.core.composition` of entry: \
+                                  comp: {row["composition"]} on idx: {idx}\
+                                    raised ValueError:\n {e}')
+                    comp=None
             if comp is not None:
-                if idx in list(range(27, 40)): # Oxygen not included on composition
+                #hard-coded exceptions. should be refactored.
+                if idx in list(range(27, 40)):
+                    exception_case="Oxygen not included on the composition (hard coded exceptions)"
+                    warnings.warn(f"skip {idx}, {exception_case}")
                     pass
-                elif idx in list(range(88, 93)): #nominal - actual
+                elif idx in list(range(88, 93)):
+                    exception_case="nominal - actual diff (hard coded exceptions)"
+                    warnings.warn(f"skip {idx}, {exception_case}")
                     pass
-                elif idx in list(range(270, 276)): #x variable
-                    pass
-                else:
+                else: #start validation
                     if almost_equals_pymatgen_atomic_fraction(row["comps_pymatgen"], comp, rtol=rtol):
                         pass
                     else:
@@ -175,13 +197,14 @@ class BaseDataset(ABC):
                     cite1=self.df.loc[idx1, "full citation"]
                     group_row = idx0 if cite0==cite1 else np.nan
             duplicate_groups.append(group_row)
-        self.df['duplicated_group']=duplicate_groups
+        if inplace:
+            self.df['duplicated_group']=duplicate_groups
         return duplicate_groups
     
-    def assign_dtypes(self):
+    def assign_dtypes(self, dtype:type=str):
         for col in self.df.columns:
-            if not self.df.col.dtype in (list, dict, float, str):
-                self.df[col] = self.df[col].astype(str)
+            if self.df.col.dtype not in (list, dict, float, str):
+                self.df[col] = self.df[col].astype(dtype)
 
 class D2TableDataset(BaseDataset):
     """Base Class for Dataset classes, load xlsx file
@@ -304,33 +327,3 @@ class Dataset(D2TableDataset):
             lambda x: (len(x["elements"])==len(x["elements_fraction"])), axis=1).all(),\
             self.df.loc[self.df.apply(
             lambda x: len(x["elements"])!=len(x["elements_fraction"]), axis=1)]
-    
-    def split(self,
-              test_size: float = 0.2,
-              shuffle: bool = True, seed: int = 42,
-              to_numpy: bool = False) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-        """process target and split.        """
-        target_df = process_targets(self.df, targets = self.config["targets"])
-        raise NotImplementedError
-        
-        target_df = target_df.reset_index(drop=True)
-        assert len(forward_input_df) == len(target_df)
-
-        #shuffle, split.
-        N = len(forward_input_df)
-        tr_idx, te_idx = train_test_split(
-            np.arange(N),
-            test_size=test_size,
-            random_state=seed,
-            shuffle=shuffle,
-        )
-        if to_numpy:
-            return (forward_input_df.loc[tr_idx].to_numpy(),
-                    target_df.loc[tr_idx].to_numpy(),
-                    forward_input_df.loc[te_idx].to_numpy(),
-                    target_df.loc[te_idx].to_numpy())
-        else:
-            return (forward_input_df.loc[tr_idx],
-                    target_df.loc[tr_idx],
-                    forward_input_df.loc[te_idx],
-                    target_df.loc[te_idx])

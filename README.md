@@ -1,28 +1,20 @@
 # Utils for HS dataset
 ***Repository for collaboration, not for public share yet***
-## Notes
-### 24 Nov. Reverting abandoned features
-* (trying) optional installation via `poetry install --with convert` or `poetry sync --with convert`
-    * default install keep minimal utilities for the dataset
+## Notes (19 Jan 2026)
+* Now using `uv` without `Poetry`
+* optional dependency `convert` for featurization and convert.
+    * 
     * with `convert` group installed, `featurizer` and `converters` will be available
-* while [`matminer` may not support python>3.13](https://github.com/hackingmaterials/matminer/blob/main/pyproject.toml) and many latest envs, it shoud be separated from.
-* then it is just refactored and re-initialized repo from draftsh2025.
-### Init. (10 Nov 2025)
-* refactoring, split from [draftsh2025, `2973dea`](https://github.com/chhyyi/draftsh2025/commit/2973dea7f3fc0e86efe12acd94cf6cd09a438261)
-* without featurization, datatable conversion
-
+    
 
 ## Installation
-### `Poetry` Virtual Environment (Recommended)
-devloped environment: windows 11, python==3.13, poetry version 2.1.4
+### Virtual Environment via UV (Recommended)
+devloped environment: windows 11, python==3.13, uv==0.9.24
 * install `git clone https://github.com/qmep-chyi/hsd_utils.git`
 * `cd hsd_utils`
-* additional poetry config may be required: `poetry config virtualenvs.use-poetry-python true`
-* `poetry install --with dev` shoulde success, include `Installing the current project: hsdu`
-    * `poetry install --with dev,convert` to use featurizer/converter.
-* restart terminal, `cd` to repo root.
-* `poetry env list` to assure you are running on the virtual environment.
-* select python interpreter on the IDLE if required
+* `uv sync`
+* to use featurizer/converter, `uv sync --extra convert` 
+    * As [`matminer` may not support python>3.13](https://github.com/hackingmaterials/matminer/blob/main/pyproject.toml) and many latest envs.
 
 ### Google colab(linux) and pip
 ***To be tested.(leave versions python and major package when test)***
@@ -33,9 +25,9 @@ devloped environment: windows 11, python==3.13, poetry version 2.1.4
 
 ## Usage
 ### Load in-house dataset
-Load latest in-house dataset as a `pandas.DataFrame`,
-get featurized dataset as pandas.DataFrame.  
-*dataset is not here. download at (private) google drive.*
+- Load latest in-house dataset as a `pandas.DataFrame`,
+- get featurized dataset as pandas.DataFrame.  
+- *dataset is not here. download from (private) google drive.*
 
 ```python
 from hsdu.dataset import Dataset
@@ -51,7 +43,7 @@ assert isinstance(hsd.df, pd.DataFrame)
 
 * get cleaned datatable to generate compositional feature
     * clean some inhomogeneous entries
-    * merge multiple $T_c$s from multiple measurement
+    * merge multiple $T_c$ values from multiple measurement
     * merge entries with too close composition
 * then featurize, 
     * get datatable with massive features(450 columns for input.)

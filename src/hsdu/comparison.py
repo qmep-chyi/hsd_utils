@@ -9,9 +9,7 @@ References
     - Xu, S. Predicting superconducting temperatures with new hierarchical neural network AI model. Front. Phys. 20, 14205 (2025).
 """
 #%%
-from pathlib import Path
 import importlib.resources as resources
-from urllib.parse import urlparse
 from typing import Optional
 
 import pandas as pd
@@ -77,7 +75,7 @@ class StanevSuperCon(D2TableDataset):
                         for i in list(range(comp.as_data_dict()["nelements"]))]
                     elem_list.append(comp.as_data_dict()["elements"])
                     frac_list.append(row_fracs)
-                except:
+                except ValueError:
                     drop_rows.append(idx)
         self.config=config_parser(config, "dataset")
         self.df = self.df.drop(index=drop_rows, axis=0)
