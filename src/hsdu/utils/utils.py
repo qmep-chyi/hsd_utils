@@ -4,7 +4,8 @@ functions:
     * config_parser()
 """
 
-import json, math
+import json
+import math
 from pathlib import Path
 from typing import Literal, Iterator
 import importlib.resources as resources
@@ -26,8 +27,9 @@ def config_parser(config: str | dict | Path, mode: Literal["dataset", "featurize
         if config.is_absolute():
             xls_path = config
         else:
-            with resources.as_file(resources.files(f"hsdu.config").joinpath(mode).joinpath(config.name)) as path:
+            with resources.as_file(resources.files("hsdu.config").joinpath(mode).joinpath(config.name)) as path:
                 xls_path = path
+                xls_path = xls_path.with_suffix(".json")
                 assert xls_path.is_file(), FileNotFoundError(xls_path)
         fp = open(xls_path, "r", encoding = "utf-8")
         assert Path.is_file(xls_path)

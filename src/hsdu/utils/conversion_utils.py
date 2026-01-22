@@ -4,7 +4,6 @@ utility functions to convert datatables.
 Todo: refactor process_target(too long)
 """
 from typing import Optional
-import ast
 
 import pandas as pd
 import numpy as np

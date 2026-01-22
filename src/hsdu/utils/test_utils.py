@@ -1,10 +1,18 @@
 from pathlib import Path
+import argparse
 import importlib.resources as resources
 
 import pandas as pd
 
+class DoubleInput(ValueError):
+    pass
 
-def test_dataset_gen(full_dataset_pth, from_pth=None, to_pth=None, keep_comps=True):
+def build_test_parser() -> argparse.ArgumentParser:
+    ci_parser = argparse.ArgumentParser()
+    ci_parser.add_argument("--dataset", required=True)
+    return ci_parser
+
+def test_dataset_gen(full_dataset_pth=None, from_pth=None, to_pth=None, keep_comps=True):
     """update test set
     
     test set is a small subset to test repository
@@ -46,6 +54,7 @@ def test_dataset_gen(full_dataset_pth, from_pth=None, to_pth=None, keep_comps=Tr
     # initialize paths
     assert keep_comps, NotImplementedError
     default_testset_path:Path
+    args=build_test_parser().parse_args()
     with resources.as_file(resources.files("hsdu.data.tests") /"test_dataset.csv") as path:
         default_testset_path = path
     if from_pth is None:
@@ -60,21 +69,25 @@ def test_dataset_gen(full_dataset_pth, from_pth=None, to_pth=None, keep_comps=Tr
     if to_pth is None:
         to_pth=default_testset_path
     
-    full_dataset_pth=Path(full_dataset_pth)
-    assert full_dataset_pth.is_file()
+    if args.dataset:
+        assert full_dataset_pth is None, DoubleInput("dataset path given in both commandline args and function args.")
+        full_dataset_pth = Path(args.dataset)
+    
+    assert full_dataset_pth.is_file(), FileNotFoundError
     
     dataset=pd.read_csv(full_dataset_pth)
 
     old_test=pd.read_csv(from_pth)
-    
+    old_test_set_shape = old_test.shape
+
     test_list=[]
     for idx, row in old_test.iterrows():
         for fidx, frow in dataset.iterrows():
             if frow["composition"]==row["composition"]:
                 test_list.append(fidx)
                 break
-    
+    assert dataset.loc[test_list].shape==old_test_set_shape
     dataset.loc[test_list].to_csv(to_pth, index=False)
 
 if __name__=="__main__":
-    test_dataset_gen(r"merged_dataset_forward.csv")
+    test_dataset_gen()
