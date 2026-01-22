@@ -52,7 +52,7 @@ class StanevSuperCon(D2TableDataset):
         * see `src\hsdu\data\miscs\preprocess_supercon.py`
         * note that treshold_max_tc is hard coded, because it is close to the 5213 entries of xu et al
     """
-    def __init__(self, drop_cols = None, config = None, exception_col = None,
+    def __init__(self, drop_cols = None, exception_col = None,
                  maxlen: Optional[int] = None, treshold_max_tc=12):
         with resources.as_file(resources.files("hsdu.data.miscs") /"preprocessed_supercon.csv") as path:
             super().__init__(xls_path=path, drop_cols=drop_cols,
@@ -77,7 +77,6 @@ class StanevSuperCon(D2TableDataset):
                     frac_list.append(row_fracs)
                 except ValueError:
                     drop_rows.append(idx)
-        self.config=config_parser(config, "dataset")
         self.df = self.df.drop(index=drop_rows, axis=0)
         self.df["elements"]=elem_list
         self.df["elements_fraction"]=frac_list

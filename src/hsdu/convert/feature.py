@@ -21,7 +21,6 @@ import math
 from pathlib import Path
 import importlib.resources as resources
 from itertools import combinations
-from unittest.mock import patch
 import warnings
 
 import numpy as np
@@ -34,8 +33,6 @@ from matminer.utils.data import AbstractData
 
 from hsdu.data.vendor.matminer.data import MagpieData
 from hsdu.utils.utils import config_parser, ConfigSingleSource, merge_dfs
-
-__all__ = ["Featurizer", "MultiSourceFeaturizer"]
 
 def __getattr__(name):
     if name == "Featurizer":
@@ -127,7 +124,7 @@ class MyElementProperty(ElementProperty):
     def __init__(self, data_source: AbstractData | str, features: list[str], stats: list[str], impute_nan=False, unweight: bool = False, config=None):
         super().__init__(data_source, features, stats, impute_nan)
         self.unweight = unweight
-        assert unweight == False, NotImplementedError
+        assert not unweight, NotImplementedError(unweight)
         self.pstats = CustomPropertyStats() #overrided
         if data_source == "mast-ml":
             self.data_source = MastMLMagpieData(impute_nan = impute_nan)
@@ -143,14 +140,14 @@ class InhouseSecondary(AbstractData):
     Will be consumed by MyElementProperty().featurize()
     """
     def __init__(self, configs: dict, impute_nan: bool = False):
-        assert impute_nan==False
+        assert not impute_nan, NotImplementedError(impute_nan)
     
         self.all_elemental_props={}
         self.available_props=[]
         self.config_per_sources = [ConfigSingleSource(config_1source) for config_1source in configs]
     
         self.first_properties=["NsValence", "NpValence", "NdValence", "NfValence", "NValence", "Electronegativity"]
-        with resources.as_file(resources.files("matminer.utils.data")) as path:
+        with resources.as_file(resources.files("matminer.utils")) as path:
             magpie_data = MagpieData(data_dir=path.joinpath("data_files", "magpie_elementdata"), impute_nan=impute_nan, features=self.first_properties)
         self.xu_eights_init(magpie_data=magpie_data)
 
@@ -345,7 +342,7 @@ class MultiSourceFeaturizer():
                     num_features += len(config_single_source)
                     for srcc, feat, stat in config_single_source.iter_config():
                         #delete some parameters used when featurize. see `hsdu\config\feature\xu.json`
-                        col_name=f"{srcc}_{feat}_{stat.replace("::","_")}"
+                        col_name=f'{srcc}_{feat}_{stat.replace("::","_")}'
                         col_name=col_name.replace("_self_prop::", "_")
                         col_name=col_name.replace("_self_prop", "")
                         col_names.append(col_name)
@@ -381,7 +378,7 @@ class MultiSourceFeaturizer():
         """
         # set data_source
         for config_single_source in config:
-            print(f"start featurize {len(config_single_source["feature"])*len(config_single_source["stat"])} features: {config_single_source}")
+            print(f'start featurize {len(config_single_source["feature"])*len(config_single_source["stat"])} features: {config_single_source}')
             data_source=config_single_source["src"]
             featurizer = MyElementProperty(data_source = data_source, features=config_single_source["feature"], stats=config_single_source["stat"], config=config_single_source)
             featurizer.set_n_jobs(self.config['n_jobs'])
@@ -399,7 +396,7 @@ class MultiSourceFeaturizer():
         """
         data_source=InhouseSecondary(configs=config)
         for config_single_source in config:
-            print(f"start featurize {len(config_single_source["feature"])*len(config_single_source["stat"])} features: {config_single_source}")
+            print(f'start featurize {len(config_single_source["feature"])*len(config_single_source["stat"])} features: {config_single_source}')
             featurizer=MyElementProperty(data_source=data_source, features=config_single_source["feature"],
                                          stats=config_single_source["stat"], config=config_single_source)
             featurizer.set_n_jobs(self.config['n_jobs'])
@@ -531,7 +528,7 @@ class CustomPropertyStats(PropertyStats):
         if all([d >= 0.0 for d in data_lst]):
             pass
         else:
-            warnings.warn(f"some elemental properties are negative. In this case, AP is not clearly defined. using |f_i-f_j|/(|f_i|+|f_j|) instead.")
+            warnings.warn("some elemental properties are negative. In this case, AP is not clearly defined. using |f_i-f_j|/(|f_i|+|f_j|) instead.")
         ap_out = []
         if len(data_lst)==1:
             return [0,], None #according to the definition of AP_{ij}
