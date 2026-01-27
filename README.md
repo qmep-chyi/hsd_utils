@@ -15,6 +15,9 @@ devloped environment: windows 11, python==3.13, uv==0.9.24
 * `uv sync`
 * to use featurizer/converter, `uv sync --extra convert` 
     * As [`matminer` may not support python>3.13](https://github.com/hackingmaterials/matminer/blob/main/pyproject.toml) and many latest envs.
+* (recommended) test (change directory to `tests/`)
+    `uv run python -m unittest test`
+    `uv run python -m unittest test_convert`
 
 ### Google colab(linux) and pip
 ***To be tested.(leave versions python and major package when test)***
