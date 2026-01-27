@@ -245,6 +245,8 @@ class Converter():
         # filter1. non_sc_observed
         out_df = out_df.dropna()
         print(f"shape of df after pd.dropna: {out_df.shape}")
+        self.log["exceptions"]["shape of df after pd.dropna"]=out_df.shape
+
         #filter1. num_elements:
         num_el_range = config["exceptions"].get("num_elements")
         keep_rows=[]
