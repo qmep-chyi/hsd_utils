@@ -49,11 +49,13 @@ class BaseDataset(ABC):
         pass
 
     def parse_col(self, col: str, cell_parser: CellParser, to_list: bool, data_type: type = str):
-        for idx, row in self.df.iterrows():
-            self.df.at[idx, col] = cell_parser.parse(row[col])
+        parsed_rows = []
+        for _, row in self.df.iterrows():
+            parsed_rows.append(cell_parser.parse(row[col]))
         if to_list:
             raise NotImplementedError
             #self.dataframe[col].astype(data_type)
+        self.df[col]=parsed_rows
 
     def elemental_stats(self):
         """set of elements in the dataset"""
