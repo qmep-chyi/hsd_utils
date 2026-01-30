@@ -52,8 +52,18 @@ class TestDataset(unittest.TestCase):
         r2score = r2_score(xu_dataset.df["Experimental_T_c(K)"], xu_dataset.df["Predicted_T_c(K)"])
         print(f"r2_score:{r2score}")
         self.assertAlmostEqual(r2score, 0.9246, places=4)
+    
+    def test_end_user(self):
+        """
+        Docstring for test_end_user; temp for debug.
+        
+        :param self: Description
+        """
+        _ = D2TableDataset(r"C:\Users\chyi\hsd_utils\tests\temp_devs\HESC251.csv", exception_col=None)
+        
    
 if __name__=="__main__":
     #unittest.main()
+    TestDataset("test_end_user").debug()
     TestDataset("test_dataset").debug()
     TestDataset("test_comparison").debug()
