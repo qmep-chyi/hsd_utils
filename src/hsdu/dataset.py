@@ -39,7 +39,7 @@ class BaseDataset(ABC):
             self.drop_cols = []
         else:
             self.drop_cols = drop_cols
-        self.dset_path: Path = data_path
+        self.dset_path: Path|str|None = data_path
         self.df: pd.DataFrame = pd.DataFrame()
         self.exception_col = exception_col
         self.comps_pymatgen_col = comps_pymatgen_col

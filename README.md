@@ -13,7 +13,7 @@ devloped environment: windows 11, python==3.13, uv==0.9.24
 * install `git clone https://github.com/qmep-chyi/hsd_utils.git`
 * `cd hsd_utils`
 * `uv sync`
-* to use featurizer/converter, `uv sync --extra convert` 
+* to use featurizer/converter, `uv sync --dev --extra convert` 
     * As [`matminer` may not support python>3.13](https://github.com/hackingmaterials/matminer/blob/main/pyproject.toml) and many latest envs.
 * (recommended) test (change directory to `tests/`)
     `uv run python -m unittest test`
