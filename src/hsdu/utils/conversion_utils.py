@@ -9,6 +9,24 @@ import pandas as pd
 import numpy as np
 from hsdu.parsers import parse_value_with_uncertainty, InvalidTcException
 from pymatgen.core import Composition
+from pymatgen.core.periodic_table import Element, ElementBase
+
+def element_list_iupac_ordered(elems: Composition | list |set, to_string=False):
+  if isinstance(elems, Composition):
+    elems = elems.elements
+  elif isinstance(elems, set):
+    elems=list(elems)
+  elif isinstance(elems, list):
+    pass
+  else:
+    raise ValueError(f"invalid type: {elems}")
+
+  elems = [el.symbol if isinstance(el, ElementBase) else el for el in elems]
+  elems = sorted(elems, key=lambda s: Element(s).iupac_ordering)
+  if to_string:
+    return "-".join(elems)
+  else:
+    return elems
 
 def norm_fracs(comp: Composition | str, elems: Optional[list]=None, norm:bool=True):
     if isinstance(comp, str):
