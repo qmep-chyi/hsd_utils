@@ -11,22 +11,45 @@ from hsdu.parsers import parse_value_with_uncertainty, InvalidTcException
 from pymatgen.core import Composition
 from pymatgen.core.periodic_table import Element, ElementBase
 
-def element_list_iupac_ordered(elems: Composition | list |set, to_string=False):
-  if isinstance(elems, Composition):
-    elems = elems.elements
-  elif isinstance(elems, set):
-    elems=list(elems)
+
+class OneHotFracEncoder():
+    def __init__(self, whole_elements_set: Composition | list[str] |set[str]):
+        self.element_set_iupac: list[str]=element_list_iupac_ordered(whole_elements_set)
+        self.element_index = {
+            el: i for i, el in enumerate(self.element_set_iupac)
+        }
+
+    def encode(self, comp:Composition) -> list[float]:
+        elements = comp.elements
+        fracs = norm_fracs(comp, elems=elements)
+        
+        el_symbols = [el.symbol for el in elements]
+
+        onehot_frac = [0.0]*len(self.element_set_iupac)
+
+        for el, fr in zip(el_symbols, fracs):
+            onehot_frac[self.element_index[el]]=fr
+        return onehot_frac
+
+    def decode(self, one_hot_frac:list[float]) -> Composition:
+        comps_dict={}
+        for i, frac in enumerate(one_hot_frac):
+            if frac>0.0:
+                el=self.element_set_iupac[i]
+                comps_dict[el]=frac
+        return Composition(comps_dict)
+    
+def element_list_iupac_ordered(elems: list[str] |list[ElementBase]|set[str]|set[ElementBase]) -> list[str]:
+  if isinstance(elems, set):
+    elems_out=list(elems)
   elif isinstance(elems, list):
-    pass
+    elems_out=elems
   else:
     raise ValueError(f"invalid type: {elems}")
 
-  elems = [el.symbol if isinstance(el, ElementBase) else el for el in elems]
-  elems = sorted(elems, key=lambda s: Element(s).iupac_ordering)
-  if to_string:
-    return "-".join(elems)
-  else:
-    return elems
+  elems_out = [el.symbol if isinstance(el, ElementBase) else el for el in elems_out]
+  elems_out = sorted(elems_out, key=lambda s: Element(s).iupac_ordering)
+  return elems_out
 
 def norm_fracs(comp: Composition | str, elems: Optional[list]=None, norm:bool=True):
     if isinstance(comp, str):
