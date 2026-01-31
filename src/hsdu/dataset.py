@@ -8,7 +8,7 @@ from pathlib import Path
 from abc import ABC, abstractmethod
 import importlib.resources as resources
 import string
-from typing import Optional
+from typing import Optional, cast
 
 import pandas as pd
 import numpy as np
@@ -17,7 +17,7 @@ from pymatgen.core.periodic_table import Element
 
 from hsdu.parsers import CellParser, FracParser, ElemParser
 from hsdu.utils.utils import config_parser
-from hsdu.utils.conversion_utils import almost_equals_pymatgen_atomic_fraction, norm_fracs
+from hsdu.utils.conversion_utils import almost_equals_pymatgen_atomic_fraction, norm_fracs, OneHotFracEncoder, element_list_iupac_ordered
 
 
 #from matminer.featurizers.composition import composite
@@ -39,10 +39,11 @@ class BaseDataset(ABC):
             self.drop_cols = []
         else:
             self.drop_cols = drop_cols
-        self.dset_path: Path|str|None = data_path
+        self.dset_path: Path = Path(".") if data_path is None else Path(data_path)
         self.df: pd.DataFrame = pd.DataFrame()
         self.exception_col = exception_col
-        self.comps_pymatgen_col = comps_pymatgen_col
+        self.onehot_frac:OneHotFracEncoder
+        self.elemental_set: list[str]
 
     @abstractmethod
     def load_data(self) -> pd.DataFrame:
@@ -55,25 +56,8 @@ class BaseDataset(ABC):
         if to_list:
             raise NotImplementedError
             #self.dataframe[col].astype(data_type)
-        self.df[col]=parsed_rows
+        return parsed_rows
 
-    def elemental_stats(self):
-        """set of elements in the dataset"""
-        elems=set()
-        for _, row in self.df.iterrows():
-            elems.update(row["elements"])
-        assert elems.issubset(set([el.symbol for el in Element]))
-        return elems
-    
-    def pymatgen_comps(self, inplace = True) -> Optional[pd.Series]:
-        comps_pymatgen = self.df.apply(lambda row: Composition(zip(row["elements"], row["elements_fraction"])), axis=1)
-        assert len(comps_pymatgen) == len(self.df)
-        if inplace:
-            self.df[self.comps_pymatgen_col] = comps_pymatgen
-            return None
-        else:
-            return self.df[self.comps_pymatgen_col]
-        
     def pymatgen_duplicates(self, other_df:Optional[pd.DataFrame]=None, save_dir=None, exception_map:Optional[dict]=None, rtol=0.1, return_dict:bool=True):
         """
         compare elements and elements_fraction, find duplicates. 
@@ -108,7 +92,7 @@ class BaseDataset(ABC):
             if idx0 not in self.duplicated_comps:
                 duplicated_row={}
                 idx1_start = 0 if other_df is not None else idx0 # when compare self, (i,j)==(j,i)
-                row0_compare=row0[comps_pymatgen_col]
+                row0_compare=cast(Composition, row0[comps_pymatgen_col])
                 if exception_map is not None:
                     if idx0 in exception_map:
                         row0_compare=df1.loc[exception_map[idx0], comps_pymatgen_col]
@@ -211,7 +195,7 @@ class BaseDataset(ABC):
 class D2TableDataset(BaseDataset):
     """Base Class for Dataset classes, load xlsx file
     
-    load csv or MS Excel(xlsx) file, generate features and an export array for ML.
+    load csv, generate features and an export array for ML.
 
     Parameters:
         * xls_path: path to the the xlsx file
@@ -222,13 +206,12 @@ class D2TableDataset(BaseDataset):
         - XuDataset(): Load Xu 2025 HEAs used to validate.
     """
     def __init__(
-            self, xls_path: Path | str,
-            notebook: str = None,
+            self, dset_path: Path | str,
+            notebook: str | None = None,
             drop_cols: Optional[list[str]] = None,
             index_col: Optional[str] = None,
             exception_col: Optional[str | list[str]] = "Exceptions",
-            parse_elem_col: bool=True, parse_frac_col:bool=True,
-            gen_pymatgen_comps_col:bool=True):
+            encode_onehot_fracs:bool=True):
         if drop_cols is None:
             self.drop_cols = []
         else:
@@ -240,48 +223,69 @@ class D2TableDataset(BaseDataset):
         else:
             self.index_col=index_col
 
-        if isinstance(xls_path, str):
-            xls_path = Path(xls_path)
-        if xls_path.is_absolute():
+        if isinstance(dset_path, str):
+            dset_path = Path(dset_path)
+        if dset_path.is_absolute():
             pass
         else:
-            if xls_path.is_file():
+            if dset_path.is_file():
                 pass
             else:
-                with resources.as_file(resources.files("hsdu.data").joinpath(xls_path)) as pth:
-                    xls_path = pth
-                assert xls_path.is_file(),FileNotFoundError
+                with resources.as_file(resources.files("hsdu.data").joinpath(str(dset_path))) as pth:
+                    dset_path = pth
+                assert dset_path.is_file(),FileNotFoundError
 
-        super().__init__(xls_path, drop_cols = drop_cols)
+        super().__init__(dset_path, drop_cols = drop_cols)
+        self.dset_path: Path = self.dset_path
         self.sheet = notebook
         self.maxlen: Optional[int] = None
 
-        df = self.load_data()
+        df:pd.DataFrame = self.load_data()
         if exception_col is not None:
             df = df[df[exception_col].apply(pd.isna)]
         else:
             pass
         self.df: pd.DataFrame = df.reset_index(drop=True)
-        if parse_elem_col:
-            self.parse_elements_col()
-        if parse_frac_col:
-            self.parse_frac_col()
-        if gen_pymatgen_comps_col:
-            self.pymatgen_comps()
 
+        if encode_onehot_fracs:
+            self.elemental_stats()
+
+    def elemental_stats(self):
+        """set of elements in the dataset"""
+        self.parsed_fracs_rows = self.parse_frac_col()
+        self.parsed_elements_rows = self.parse_elements_col()
+        elems=set()
+        for parsed_elems_row in self.parsed_elements_rows:
+            elems.update(set(parsed_elems_row))
+        self.elemental_set=element_list_iupac_ordered(elems)
+
+        self.onehot_frac=OneHotFracEncoder(self.elemental_set)
+
+        comps_dict_rows = self.onehot_frac_dicts()
+        onehot_frac_rows = [self.onehot_frac.encode(Composition(dic)) for dic in comps_dict_rows]
+
+        onehot_df = pd.DataFrame(onehot_frac_rows, index=self.df.index, columns=self.elemental_set)
+        self.df=pd.concat([self.df, onehot_df], axis=1)
+    def onehot_frac_dicts(self) -> list[dict[str, float]]:
+        comps_dict_rows=[]
+        for els, fracs in zip(self.parsed_elements_rows, self.parsed_fracs_rows):
+            comps_dict_rows.append(self.onehot_frac_dict(els, fracs))
+        return comps_dict_rows
+    
+    def onehot_frac_dict(self, els, fracs) -> dict[str, float]:
+        return {el:frac for el, frac in zip(els, fracs)}
+    
+    def pymatgen_comps(self, idx) -> Composition:
+        comps_pymatgen = Composition(zip(self.elemental_set, self.df.loc[idx, self.elemental_set]))
+        return comps_pymatgen
 
     def load_data(self) -> pd.DataFrame:
-        if self.dset_path.suffix==".xlsx" or self.dset_path.stem==".xls":
-            df = pd.read_excel(self.dset_path,
-                            sheet_name=self.sheet,
-                            nrows=self.maxlen,
-                            index_col=self.index_col)
-        elif self.dset_path.suffix==".csv":
+        if self.dset_path.suffix==".csv":
             df = pd.read_csv(self.dset_path,
                             nrows=self.maxlen,
                             index_col=self.index_col)
         else:
-            raise TypeError("read only xlsx, xls, csv files(should have suffix).")
+            raise ValueError("read only csv file(should have suffix).")
 
         drop_cols_remaining=[]
         if len(self.drop_cols)>0:
@@ -290,13 +294,13 @@ class D2TableDataset(BaseDataset):
                     drop_cols_remaining.append(col)
         return df.drop(columns=drop_cols_remaining)
 
-    def parse_elements_col(self, colname: str="elements"):
-        """parse string of xlsx cell with elements in list form"""
+    def parse_elements_col(self, colname: str="elements")->list[list[str]]:
+        """parse string of a csv cell with elements in list form"""
         cell_parser = ElemParser()
         return self.parse_col(colname, cell_parser, False)
 
-    def parse_frac_col(self, colname: str="elements_fraction"):
-        """parse string of xlsx cell with fractions in list form"""
+    def parse_frac_col(self, colname: str="elements_fraction")->list[list[float]]:
+        """parse string of a csv cell with fractions in list form"""
         cell_parser = FracParser()
         return self.parse_col(colname, cell_parser, False)
     
@@ -321,10 +325,10 @@ class Dataset(D2TableDataset):
             drop_cols = self.config.get("drop_cols", drop_cols), 
             index_col= self.config.get("index_column"),
             exception_col=self.config.get("exception_col", exception_col))
-        self.validate_elem_frac_length()
-        self.elemental_set: set = self.elemental_stats()
+        #self.validate_elem_frac_length()
 
     def validate_elem_frac_length(self):
+        raise DeprecationWarning
         assert self.df.apply(
             lambda x: (len(x["elements"])==len(x["elements_fraction"])), axis=1).all(),\
             self.df.loc[self.df.apply(

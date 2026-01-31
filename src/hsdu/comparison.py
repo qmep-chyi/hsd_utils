@@ -28,7 +28,7 @@ class XuTestHEA(D2TableDataset):
         with resources.as_file(resources.files("hsdu.data.miscs") /"xu2025_test_HEAs.csv") as path:
             xls_path = path
 
-        super().__init__(xls_path=xls_path, notebook="Sheet1", exception_col=None,
+        super().__init__(dset_path=xls_path, notebook="Sheet1", exception_col=None,
                          parse_frac_col=False, parse_elem_col=False,
                          gen_pymatgen_comps_col=False, index_col="xu_index")
         elem_list=[]
@@ -55,7 +55,7 @@ class StanevSuperCon(D2TableDataset):
     def __init__(self, drop_cols = None, exception_col = None,
                  maxlen: Optional[int] = None, treshold_max_tc=12):
         with resources.as_file(resources.files("hsdu.data.miscs") /"preprocessed_supercon.csv") as path:
-            super().__init__(xls_path=path, drop_cols=drop_cols,
+            super().__init__(dset_path=path, drop_cols=drop_cols,
                             exception_col=exception_col,
                             index_col="index",
                             parse_frac_col=False, parse_elem_col=False,

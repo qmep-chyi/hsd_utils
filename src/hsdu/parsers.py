@@ -55,31 +55,25 @@ class CellParser(ABC):
         args:
             * inp: string of a number. It can be a fraction or floats with uncertainty.
         """
-        if uncertainty:
-            raise NotImplementedError(uncertainty)
-        if not as_float:
-            raise NotImplementedError(as_float)
+        assert not uncertainty, NotImplementedError(uncertainty)
+        assert as_float, NotImplementedError(as_float)
         
-        assert isinstance(v, str)
         if "(" in v: 
             # number with uncertainty. then, it cannot be a fraction
             assert v.strip()[-1]==")",v.strip()[-1]
-            _ = v[v.find("("):-1] # uncertainty not implemented
-            v=ast.literal_eval(v[:v.find("(")])
+            v_unc = v[v.find("("):-1] # uncertainty not implemented
+            v_mean=ast.literal_eval(v[:v.find("(")])
         elif "/" in v:
             frac_pos=v.find("/")
             numerator = ast.literal_eval(v[:frac_pos])
             denominator = ast.literal_eval(v[frac_pos+1:])
             assert isinstance(numerator, int), numerator
             assert isinstance(denominator, int), denominator
-            v=fractions.Fraction(numerator, denominator)
+            v_mean=fractions.Fraction(numerator, denominator)
         else:
-            pass
+            v_mean=float(v)
 
-        if as_float and not uncertainty:
-            return float(v)
-        else:
-            raise NotImplementedError(as_float, not uncertainty)
+        return float(v_mean)
     
 class ElemParser(CellParser):
     """
@@ -88,39 +82,39 @@ class ElemParser(CellParser):
     def __init__(self, policy="elem"):
         super().__init__(policy)
 
-    def parse(self, val: str) -> list[str]:
+    def parse(self, inp: str) -> list[str]:
         elements_in_ptable = [el.symbol for el in Element]
-        val = ast.literal_eval(val)
-        assert all([x in elements_in_ptable for x in val]), f"Elements list {val} should include only elements symbols"
-        return val
+        out:list[str] = ast.literal_eval(inp)
+        assert all([x in elements_in_ptable for x in out]), f"Elements list {out} should include only elements symbols"
+        return out
 
 class FracParser(CellParser):
     """parse string of frac lists"""
     def __init__(self, policy="frac"):
         super().__init__(policy)
 
-    def parse(self, fracs, multiphase_rule: str = "nominal", as_float: bool = True):
+    def parse(self, inp, multiphase_rule: str = "nominal", as_float: bool = True):
         """ parse elemental_fractions as list of numbers
         
         args:
             * multi_fracs_rule:
                 if "nominal", use fracs["nominal"].
         """
-        fracs = ast.literal_eval(fracs)
-        out: list[int] = []
-        if isinstance(fracs, dict):
+        inp = ast.literal_eval(inp)
+        out: list[float] = []
+        if isinstance(inp, dict):
             if multiphase_rule == "nominal":
-                fracs = fracs["nominal"]
+                inp = inp["nominal"]
             else: 
                 raise NotImplementedError(multiphase_rule)
-        for v in fracs:
+        for v in inp:
             if isinstance(v, str):
                 out.append(self.num_string_parser(v, as_float = as_float))
             else:
                 assert isinstance(v, float) or isinstance(v, int), ValueError(v)
                 out.append(float(v))
         assert isinstance(out, list)
-        assert len(fracs) == len(out)
+        assert len(inp) == len(out)
         return out
 
 # other functions that requires iterate whole data
