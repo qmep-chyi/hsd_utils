@@ -48,6 +48,9 @@ class BaseDataset(ABC):
     @abstractmethod
     def load_data(self) -> pd.DataFrame:
         pass
+    
+    def __len__(self):
+        return len(self.df)
 
     def parse_col(self, col: str, cell_parser: CellParser, to_list: bool, data_type: type = str):
         parsed_rows = []
@@ -212,6 +215,7 @@ class D2TableDataset(BaseDataset):
             index_col: Optional[str] = None,
             exception_col: Optional[str | list[str]] = "Exceptions",
             encode_onehot_fracs:bool=True):
+        self.df:pd.DataFrame
         if drop_cols is None:
             self.drop_cols = []
         else:
