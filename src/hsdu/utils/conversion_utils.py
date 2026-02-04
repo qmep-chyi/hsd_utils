@@ -12,7 +12,7 @@ from pymatgen.core import Composition
 from pymatgen.core.periodic_table import Element, ElementBase
 
 
-class OneHotFracEncoder():
+class OneHotFracCodec():
     def __init__(self, whole_elements_set: Composition | list[str] |set[str]):
         self.element_set_iupac: list[str]=element_list_iupac_ordered(whole_elements_set)
         self.element_index = {

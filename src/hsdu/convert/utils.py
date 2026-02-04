@@ -178,20 +178,20 @@ class Converter():
 
         if not simple_target:
             target_df = process_targets(
-                df=dataset.df,
+                df=dataset._df,
                 targets=targets,
                 return_num_tcs=True,
                 exception_row=None,
                 non_sc_rule=non_sc_rule)
         elif simple_target:
-            target_df=dataset.df[targets]
+            target_df=dataset._df[targets]
         
-        out_df = merge_dfs(target_df, dataset.df.loc[:,config["keep_cols_from_dataset"]])
+        out_df = merge_dfs(target_df, dataset._df.loc[:,config["keep_cols_from_dataset"]])
         if config.get("keep_original_index_from") is None:
             # reset index
             out_df[config["keep_original_index_as"]]=list(range(len(out_df)))
         else:
-            out_df[config["keep_original_index_as"]]=dataset.df[config["keep_original_index_from"]]
+            out_df[config["keep_original_index_as"]]=dataset._df[config["keep_original_index_from"]]
         if config.get("duplicates_rule") is not None:
             out_df = self.merge_duplicates(config, out_df, targets)
         out_df = out_df.drop(columns=config["drop_cols_after_merge_duplicates"])
@@ -213,7 +213,7 @@ class Converter():
         tc_rule = config["duplicates_rule"]["tc"]
         if criteria_rule=="single_ref":
             criteria=out_df["full citation"].to_list()
-        elif criteria_rule=="dataset":
+        elif criteria_rule=="dataset": # merge cross the entire dataset
             criteria=list([0]*(len(out_df)))
         else:
             raise NotImplementedError(config["duplicates_rule"]["criteria"])
@@ -251,9 +251,9 @@ class Converter():
         num_el_range = config["exceptions"].get("num_elements")
         keep_rows=[]
         if num_el_range is not None:
-            for idx, row in out_df.iterrows():
-                elements_number = len(row["elements"])
-                for el in row["elements"]:
+            for idx, _ in out_df.iterrows():
+                elements_number = len(self.dataset.idx2aux['parsed_elements'][idx])
+                for el in self.dataset.idx2aux['parsed_elements'][idx]:
                     if el in config["exceptions"]["num_elements"]["ignore_elements"]:
                         elements_number=elements_number-1
 

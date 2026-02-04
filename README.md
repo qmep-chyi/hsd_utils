@@ -1,11 +1,34 @@
 # Utils for HS dataset
-***Repository for collaboration, not for public share yet***
-## Notes (19 Jan 2026)
-* Now using `uv` without `Poetry`
-* optional dependency `convert` for featurization and convert.
-    * 
+***Repository for collaboration, not for public share***
+
+## Changes
+* (03 Feb 2026) New Features / functions
+    * New attribute `Dataset.idx2aux`-- dict of mappings: `aux_name -> (idx -> value)`.
+        * e.g. `Dataset.idx2aux["comps_pymatgen"][3]` is pymatgen Composition of entry idx=3.
+        * Now, do not add new column on Dataset().df or D2TableDataset().df
+        * so, `dataset.df["comps_pymatgen"]` removed. use `dataset.idx2aux["comps_pymatgen"]`
+        * make sure indices are `list(range(len(dataset)))`
+            ```python
+            assert dataset.df.index.tolist()==list(range(len(dataset)))
+            assert dataset.df.index.tolist()==dataset.idx2aux["aux_name"].keys()
+            ```
+        * Now, `dataset[idx]` returns a dictionary;
+            * `out = {k:v[idx] for k, v in self.idx2aux.items()}`
+            * `out["df"] = self.df.loc[idx, :]`
+    * new distance matrix, duplicates checker + merger
+        * using `scipy.spatial.distance.cdist`
+        * See `hsdu.utils.duplicate`
+        * Now distances and grouping results are order-independent. (previously it was not.)
+    * One-hot vector like encoding on initiallization
+        * integrated initialization steps
+        * now it adds columns like `Ta`, `Hf` for self.df (iupac ordered)
+        * values are fraction of that elements
+            * Not normalized (e.g. `sum(self.df.loc[idx, [self.elemental_set]])!=1`)
+            * refers to `one-hot fracs` from now on.
+        
+* (19 Jan 2026) Now using `uv` without `Poetry`
+    * optional dependency `convert` for featurization and convert.
     * with `convert` group installed, `featurizer` and `converters` will be available
-    
 
 ## Installation
 ### Virtual Environment via UV (Recommended)

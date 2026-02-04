@@ -35,7 +35,7 @@ class TestDataset(unittest.TestCase):
 
         # load as a D2TableDataset
         dataset = D2TableDataset(test_dataset_path, exception_col=None)
-        dataset.pymatgen_comps()
+        print(dataset[3])
 
         # load dataset
         dataset = Dataset(test_dataset_path, config="default.json")
@@ -43,13 +43,13 @@ class TestDataset(unittest.TestCase):
     def test_comparison(self):
         # load stanev's supercon dataset 
         ss_dataset = StanevSuperCon()
-        ss_dataset.pymatgen_comps()
+        ss_dataset.idx2aux['comps_pymatgen']
 
         _ = XuTestHEA()
 
         #xu_val_r2score: test XuDataset reproduces the snapshot
         xu_dataset = XuTestHEA()
-        r2score = r2_score(xu_dataset.df["Experimental_T_c(K)"], xu_dataset.df["Predicted_T_c(K)"])
+        r2score = r2_score(xu_dataset._df["Experimental_T_c(K)"], xu_dataset._df["Predicted_T_c(K)"])
         print(f"r2_score:{r2score}")
         self.assertAlmostEqual(r2score, 0.9246, places=4)
     

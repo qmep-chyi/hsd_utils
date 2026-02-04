@@ -37,10 +37,10 @@ class Test(unittest.TestCase):
 
         # featurize from cleand datatable
         dataset = D2TableDataset(converter.save_compositional5_pth, exception_col=None)
-        dataset.pymatgen_comps()
+        dataset.idx2aux['comps_pymatgen']
 
         featurizer=MultiSourceFeaturizer(config="xu.json")
-        featurized_df = featurizer.featurize_all(dataset.df, merge_both=True, save_file="test_featurized_table.csv")
+        featurized_df = featurizer.featurize_all(dataset, merge_both=True, save_file="test_featurized_table.csv")
         print(featurized_df)
 
         # delete temporal files
