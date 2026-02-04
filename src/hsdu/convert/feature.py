@@ -26,11 +26,13 @@ import warnings
 import numpy as np
 import pandas as pd
 
+from pymatgen.core import Composition
 from pymatgen.core.periodic_table import Element
 from matminer.featurizers.composition import ElementProperty
 from matminer.featurizers.utils.stats import PropertyStats
 from matminer.utils.data import AbstractData
 
+from hsdu.dataset import Dataset, D2TableDataset
 from hsdu.data.vendor.matminer.data import MagpieData
 from hsdu.utils.utils import config_parser, ConfigSingleSource, merge_dfs
 
@@ -406,7 +408,7 @@ class MultiSourceFeaturizer():
         
     
     def featurize_all(self,
-                      df: pd.DataFrame,
+                      dataset: Dataset, # original dataset
                       featurized_df: pd.DataFrame = None,
                       save_file: str = None,
                       merge_both: str = False) -> pd.DataFrame:
@@ -421,7 +423,9 @@ class MultiSourceFeaturizer():
         return:
             * featurized_df: 
         """
-        featurized_df = df[["comps_pymatgen"]].copy(deep=False)
+        comps=pd.Series(dataset.idx2aux['comps_pymatgen'])
+        df = dataset._df
+        featurized_df = pd.DataFrame(comps, columns=["comps_pymatgen"]).copy(deep=False)
         for src in self.config["sources"]:
             if src in ("matminer", "matminer_expanded"):
                 featurized_df = self.featurize_matminer(featurized_df, config=self.config[src], impute_nan=False)
@@ -432,7 +436,7 @@ class MultiSourceFeaturizer():
         
         #drop temporal column, "comps_pymatgen"
         featurized_df.drop(columns=["comps_pymatgen"], inplace=True)
-        assert featurized_df.shape == (len(df), len(self.col_names))
+        assert featurized_df.shape == (len(comps), len(self.col_names))
 
         # replace matminer column names to stored ones..
         featurized_df=featurized_df.rename(columns=dict(zip(featurized_df.columns.tolist(), self.col_names)))

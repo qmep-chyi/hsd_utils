@@ -26,23 +26,19 @@ class XuTestHEA(D2TableDataset):
     """
     def __init__(self):
         with resources.as_file(resources.files("hsdu.data.miscs") /"xu2025_test_HEAs.csv") as path:
-            xls_path = path
+            csv_path = path
 
-        super().__init__(dset_path=xls_path, notebook="Sheet1", exception_col=None,
-                         parse_frac_col=False, parse_elem_col=False,
-                         gen_pymatgen_comps_col=False, index_col="xu_index")
+        super().__init__(dset_path=csv_path, exception_col=None,
+                        parse_pymatgen_comps_col='formula', index_col="xu_index")
         elem_list=[]
         frac_list=[]
-        for _, row in self.df.iterrows():
+        for _, row in self._df.iterrows():
             comp=Composition(row["formula"])
             elem_list.append(comp.as_data_dict()["elements"])
             frac_list.append(
                 [comp.get_atomic_fraction(comp.as_data_dict()["elements"][i])
                  for i in list(range(comp.as_data_dict()["nelements"]))])
-        self.df["elements"]=elem_list
-        self.df["elements_fraction"]=frac_list
-        self.pymatgen_comps()
-
+            
 class StanevSuperCon(D2TableDataset):
     """load preprocessed SuperCon csv 
     
@@ -57,16 +53,16 @@ class StanevSuperCon(D2TableDataset):
         with resources.as_file(resources.files("hsdu.data.miscs") /"preprocessed_supercon.csv") as path:
             super().__init__(dset_path=path, drop_cols=drop_cols,
                             exception_col=exception_col,
-                            index_col="index",
-                            parse_frac_col=False, parse_elem_col=False,
-                            gen_pymatgen_comps_col=False)
+                            index_col="index", encode_onehot_fracs=True, 
+                            parse_pymatgen_comps_col="name")
         
         elem_list=[]
         frac_list=[]
         drop_rows=[]
-        
-        for idx, row in self.df.iterrows():
-            if row["Tc"]>treshold_max_tc:
+
+        for idx, row in self._df.iterrows():
+            # column Tc is renamed to Tc0, because of `Technetium (Tc)`
+            if row["Tc0"]>treshold_max_tc:
                 drop_rows.append(idx)
             else:
                 try:
@@ -77,18 +73,15 @@ class StanevSuperCon(D2TableDataset):
                     frac_list.append(row_fracs)
                 except ValueError:
                     drop_rows.append(idx)
-        self.df = self.df.drop(index=drop_rows, axis=0)
-        self.df["elements"]=elem_list
-        self.df["elements_fraction"]=frac_list
-        self.pymatgen_comps()
-        self.df: pd.DataFrame = self.df.reset_index(drop=True)
+        self._df = self._df.drop(index=drop_rows, axis=0)
+        self._df: pd.DataFrame = self._df.reset_index(drop=True)
 
 if __name__=="__main__":
     # -----search xu2025 composition formula on merged dataset, check duplicated--------
     #   * does not consider which references it came from
     #   
     xu_test = XuTestHEA()
-    dataset = Dataset(xls_path=r"C:\Users\chyi\draftsh2025\temp_devs\merged_dataset_forward.csv", config="default_forward.json", exception_col=None)
+    dataset = Dataset(csv_path=r"C:\Users\chyi\draftsh2025\temp_devs\merged_dataset_forward.csv", config="default_forward.json", exception_col=None)
 
     #exception_map, as we currently use "nominal composition" only.
     exception_map={
