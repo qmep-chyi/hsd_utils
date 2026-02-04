@@ -8,7 +8,7 @@ from pathlib import Path
 from abc import ABC, abstractmethod
 import importlib.resources as resources
 import string
-from typing import Optional, cast
+from typing import Optional, cast, Any
 from collections.abc import Sequence
 
 import pandas as pd
@@ -50,8 +50,8 @@ class BaseDataset(ABC, Sequence):
         self.dset_path: Path = Path(".") if data_path is None else Path(data_path)
         self._df: pd.DataFrame = pd.DataFrame()
         self.exception_col = exception_col
-        self.idx2aux: dict[dict[int, any]] = dict()#dictionaries sidecar for auxiliary informations that shares self._df.index
-        self.column_sets:dict[dict[list[str]]] = dict( # set of column names in `self._df.columns``
+        self.idx2aux: dict[str, dict[int, object]] = dict()#dictionaries sidecar for auxiliary informations that shares self._df.index
+        self.column_sets:dict[str, list[str]] = dict( # set of column names in `self._df.columns``
             old_index=[],
             raw=[],
             processed=[],
@@ -60,7 +60,7 @@ class BaseDataset(ABC, Sequence):
             categorical_misc=[],
             annotations=[]
         )
-        self.index: list[int] = None
+        self.index: list[int] | None = None
 
     @abstractmethod
     def load_data(self) -> pd.DataFrame:
