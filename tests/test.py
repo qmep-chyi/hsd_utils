@@ -59,7 +59,7 @@ class TestDataset(unittest.TestCase):
         
         :param self: Description
         """
-        _ = D2TableDataset(r"C:\Users\chyi\hsd_utils\tests\temp_devs\HESC251.csv", exception_col=None)
+        _ = D2TableDataset(r"/home/chyi/hsd_utils/tests/temp_devs/hesc_dataset_16dec2025 - DataTable.csv", exception_col=None)
         
    
 if __name__=="__main__":
