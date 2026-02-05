@@ -2,6 +2,7 @@
 import argparse
 from typing import Literal
 
+import numpy as np
 import pandas as pd
 from scipy.spatial.distance import cdist
 from pymatgen.core import Composition
@@ -10,6 +11,79 @@ from pymatgen.core.periodic_table import Element
 from hsdu.dataset import Dataset
 from hsdu.utils.conversion_utils import element_list_iupac_ordered, OneHotFracCodec
 
+def dist4groups_matrix(comps4groups:list[list[Composition]], metric:Literal["cityblock", "chebyshev"], 
+                       ignore_cross_elemental_set:bool = False, group_cross_elemental_set:bool=False):
+    """
+    arguments:
+        - ignore_cross_elemental_set: 
+            - If float, add value to the distance when elemental sets are different
+        - group_cross_elemental_set:
+            - if elemental sets of a group are all the same.
+            - should be False if ignore_cross_elemental_set
+    """
+    if ignore_cross_elemental_set:
+        assert not group_cross_elemental_set, NotImplementedError
+    out = np.zeros((len(comps4groups),len(comps4groups)))
+    for group_i in range(len(comps4groups)):
+        for group_j in range(len(comps4groups)):
+            vectors0=comps4groups[group_i]
+            vectors1=comps4groups[group_j]
+            if group_i==group_j:
+                out[group_i, group_j]=np.nan
+            elif ignore_cross_elemental_set:
+                if set(vectors0[0].elements)==set(vectors1[0].elements):
+                    out[group_i, group_j] = distance_matrix(vectors0, vectors1, metric=metric).min()
+                else:
+                    out[group_i, group_j] = np.nan
+            else:
+                out[group_i, group_j] = distance_matrix(vectors0, vectors1, metric=metric).min()
+    return out
+
+def compare_dupl_groups(comps4groups:list[list[Composition]],
+                        group_names:list[str],
+                        ignore_cross_elemental_set:bool=False,
+                        print_output=True):
+    l1_dist4groups_matrix=dist4groups_matrix(comps4groups, metric="cityblock",
+                                             ignore_cross_elemental_set=ignore_cross_elemental_set)
+    l1_dist4groups_matrix=pd.DataFrame(l1_dist4groups_matrix, 
+                                        columns=group_names, index=group_names)
+    linfty_dist4groups_matrix=dist4groups_matrix(comps4groups, metric="chebyshev",
+                                                 ignore_cross_elemental_set=ignore_cross_elemental_set)
+    linfty_dist4groups_matrix=pd.DataFrame(linfty_dist4groups_matrix,
+                                            columns=group_names, index=group_names)
+    if print_output:
+        print("L1_dist_of groups:")
+        print(l1_dist4groups_matrix)
+        print("L_infty_dist_of groups:")
+        print(linfty_dist4groups_matrix)
+
+    return dict(
+        linfty = linfty_dist4groups_matrix,
+        l1= l1_dist4groups_matrix)
+
+def compare_dupl_groups_old2new(dataset, dup_group, entry_idx2group_idx):
+    disagreement=False
+    out = dict()
+    for old_group_index, old_group in dataset.duplicated_comps_group.items():
+        if set(old_group.keys())!=set(dup_group[entry_idx2group_idx[old_group_index]]):
+            disagreement=True
+            print(f"old group[{old_group_index}] indices: {old_group.keys()}")
+            assert old_group_index in old_group.keys()
+            # old_group.keys() are entry indices of groupped entries.
+            new_groups_overlapped = list(set([entry_idx2group_idx[i] for i in old_group.keys()]))
+            print(f"new groups overlapped: [{new_groups_overlapped}] indices: {[dup_group[i] for i in new_groups_overlapped]}")
+            
+            relative_groups_name = [f"old_group{old_group_index}"]+new_groups_overlapped
+
+            relative_groups=[[dataset[idx]['comps_pymatgen'] for idx in old_group.keys()]]
+            for new_group_idx in new_groups_overlapped:
+                relative_groups=relative_groups+[[dataset[i]['comps_pymatgen'] for i in dup_group[new_group_idx]]]
+            
+            out[old_group_index] = dict(
+                dist_matrix=compare_dupl_groups(relative_groups, relative_groups_name))
+    if disagreement:
+        return out
+                    
 def distance_matrix(comps0:list[Composition] |list[list[float]],
                     comps1:list[Composition] |list[list[float]],
                     metric:Literal["chebyshev", "cityblock", "euclidean", "L1", "l1", "L2","l2", "L_infty", "maximum", "tchebychev", "l_infty"], elemental_set:list[str]|None = None,
@@ -152,10 +226,7 @@ if __name__=="__main__":
     print(len(dup_group))
     print(pd.Series(group_rows).value_counts())
     print([elements_sets[dup_group[i][0]] for i in pd.Series(group_rows).value_counts().index[:10]])
-
     
-
-
     #%% test to prevent data leakage (train-test split)
 
     dup_group, group_rows = make_duplicates_group(hsd.df.index, d1_dist_matrix, dinfty_dist_matrix, elements_sets, linfty_cutoff=0.05, l1_cutoff=0.12, cross_elements_set=True)
