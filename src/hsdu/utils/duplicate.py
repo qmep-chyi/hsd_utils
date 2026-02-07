@@ -180,7 +180,7 @@ def make_duplicates_group(index, d1_dist_matrix, dinfty_dist_matrix, elements_se
             current_group_idx = group_rows[i]
         # process duplicates
         for j in index:
-            if d1_dist_matrix[i, j]<=l1_cutoff and dinfty_dist_matrix[i, j]<=linfty_cutoff:
+            if d1_dist_matrix[i, j]<l1_cutoff and dinfty_dist_matrix[i, j]<linfty_cutoff:
                 if cross_elements_set:
                     if j<=i: # just double check
                         assert i in duplicates_group[group_rows[j]]
