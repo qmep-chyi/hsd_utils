@@ -8,7 +8,7 @@ from pathlib import Path
 from abc import ABC, abstractmethod
 import importlib.resources as resources
 import string
-from typing import Optional, cast, Any
+from typing import Optional, cast, Any, Literal
 from collections.abc import Sequence
 
 import pandas as pd
@@ -341,11 +341,12 @@ class D2TableDataset(BaseDataset):
                     self._df.rename(columns={key:str(key+'0')}, inplace=True)
             self.encode_onehot_fracs(parse_pymatgen_comps_col=parse_pymatgen_comps_col)
 
-    def encode_onehot_fracs(self, inplace=True, parse_pymatgen_comps_col:str|None=None):
+    def encode_onehot_fracs(self, inplace=True, parse_pymatgen_comps_col:str|None=None,
+                            rule_invalid_fraction: Literal['all', 'single', 'error']='all'):
         """Initiallize elemental_set, encode composition to the onehot-like multiple columns
         
         arguments:
-            - inplace: 
+            - inplace: add columns to self._df
                 - add 'elements_set' column. e.g. 'Sc-Hf-Ti-Ta-Nb' 
                 - add len(self.elemental_set) columns for elements, encode fraction to self._df
                 - overwrite attributes (self.-); 
@@ -356,6 +357,11 @@ class D2TableDataset(BaseDataset):
             - composition_col:
                 - if not None, pymatgen.core.Composition(self._df[composition.col][idx])\
                     instead of parsing 'elements' and 'elements_fracion'
+            - rule_invalid_fraction: Literal['all', 'single', 'error']
+                - 'all' (default): return [None] for every onehot_frac values
+                - 'single': ignore invalid fraction (assign None, consider as 0)
+                - 'error': raise error
+
         """
         assert inplace, NotImplementedError
         df_index =  self._df.index.copy().tolist()
@@ -364,7 +370,7 @@ class D2TableDataset(BaseDataset):
         if parse_pymatgen_comps_col is None:
             self.idx2aux["parsed_fracs"] = dict(zip(df_index, self.parse_frac_col()))
             self.idx2aux["parsed_elements"] = dict(zip(df_index, self.parse_elements_col()))
-            pymatgen_comps_rows = [Composition(dic) for dic in self.onehot_frac_dicts()]
+            pymatgen_comps_rows = [Composition(dic) if None not in dic.values() else None for dic in self.onehot_frac_dicts()]
         else:
             pymatgen_comps_rows = [Composition(comp) for comp in self._df.loc[:, parse_pymatgen_comps_col]]
             self.idx2aux['parsed_fracs'] = dict()
@@ -377,11 +383,19 @@ class D2TableDataset(BaseDataset):
         self.elemental_set=self.compile_elements_set(self.idx2aux["parsed_elements"])
         self.onehot_codec=OneHotFracCodec(self.elemental_set)
 
-
-        onehot_frac_rows = [self.onehot_codec.encode(Composition(dic)) for dic in pymatgen_comps_rows]
+        assert rule_invalid_fraction=='all', NotImplementedError(rule_invalid_fraction)
+        onehot_frac_rows=[]
+        for dic in pymatgen_comps_rows:
+            if dic is None:
+                onehot_frac_rows.append([None]*len(self.onehot_codec.element_set_iupac))
+            elif None in dic.values():
+                onehot_frac_rows.append([None]*len(self.onehot_codec.element_set_iupac))
+            else:
+                onehot_frac_rows.append(self.onehot_codec.encode(Composition(dic)) if None not in dic.values() else None)
+            
 
         onehot_df = pd.DataFrame(onehot_frac_rows, index=self._df.index, columns=self.elemental_set)
-        onehot_df["elements_set"] = ["-".join(element_list_iupac_ordered(i.elements)) for i in pymatgen_comps_rows]
+        onehot_df["elements_set"] = ["-".join(element_list_iupac_ordered(i)) for i in self.idx2aux['parsed_elements'].values()]
         self._df=pd.concat([self._df, onehot_df], axis=1)
         self.column_sets["onehot_elements"]=self.elemental_set
         assert self.validation_onehot_frac()

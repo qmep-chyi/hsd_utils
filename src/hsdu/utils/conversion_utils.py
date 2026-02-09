@@ -3,7 +3,10 @@ utility functions to convert datatables.
 
 Todo: refactor process_target(too long)
 """
-from typing import Optional
+from typing import Optional, TypeVar
+from collections.abc import Iterable
+
+T = TypeVar('T')
 
 import pandas as pd
 import numpy as np
@@ -20,7 +23,7 @@ class OneHotFracCodec():
         }
 
     def encode(self, comp:Composition) -> list[float]:
-        elements = comp.elements
+        elements = element_list_iupac_ordered(comp.elements)
         fracs = norm_fracs(comp, elems=elements)
         
         el_symbols = [el.symbol for el in elements]
@@ -39,7 +42,7 @@ class OneHotFracCodec():
                 comps_dict[el]=frac
         return Composition(comps_dict)
     
-def element_list_iupac_ordered(elems: list[str] |list[ElementBase]|set[str]|set[ElementBase]) -> list[str]:
+def element_list_iupac_ordered(elems: Iterable[T]) -> list[T]:
   if isinstance(elems, set):
     elems_out=list(elems)
   elif isinstance(elems, list):
@@ -47,20 +50,28 @@ def element_list_iupac_ordered(elems: list[str] |list[ElementBase]|set[str]|set[
   else:
     raise ValueError(f"invalid type: {elems}")
 
-  elems_out = [el.symbol if isinstance(el, ElementBase) else el for el in elems_out]
+  #elems_out = [el.symbol if isinstance(el, ElementBase) else el for el in elems_out]
   elems_out = sorted(elems_out, key=lambda s: Element(s).iupac_ordering)
   return elems_out
 
-def norm_fracs(comp: Composition | str, elems: Optional[list]=None, norm:bool=True):
-    if isinstance(comp, str):
+def norm_fracs(comp: Composition | str, elems: Optional[list]=None, norm:bool=True, assert_iupac_ordered:bool=True):
+    if isinstance(comp, Composition):
+        pass
+    elif isinstance(comp, str):
         comp = Composition(comp)
-    fracs=[]
+    elif comp is None:
+        return None
+    else:
+        raise TypeError(comp)
+    
+    fracs=np.zeros(len(comp))
     if elems is not None:
+        assert elems==element_list_iupac_ordered(elems)
         elems_to_iter=elems
     else:
-        elems_to_iter=comp.elements
-    for el in elems_to_iter:
-        fracs.append(comp.get_atomic_fraction(el))
+        elems_to_iter=element_list_iupac_ordered(comp.elements)
+    for i, el in enumerate(elems_to_iter):
+        fracs[i]=comp.get_atomic_fraction(el)
     return fracs/np.sum(fracs)
 
 def almost_equals_pymatgen_atomic_fraction(a: Composition, b: Composition, rtol: float = 0.1)->bool:

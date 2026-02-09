@@ -21,11 +21,15 @@ import re
 import math
 import ast
 import fractions
+from warnings import warn
 
 from pymatgen.core.periodic_table import Element
 import pandas as pd
 
 class InvalidTcException(Exception):
+    pass
+
+class InvalidFractionException(Exception):
     pass
 
 class CellParser(ABC):
@@ -49,31 +53,45 @@ class CellParser(ABC):
     def parse(self, inp: str) -> any:
         raise NotImplementedError("self.parse()")
     
-    def num_string_parser(self, v: str, uncertainty: bool = False, as_float: bool = True):
+    def num_string_parser(self, v: str, uncertainty: bool = False, as_float: bool = True, default=None):
         """parsing string of a number
 
         args:
             * inp: string of a number. It can be a fraction or floats with uncertainty.
+            * default: default None. Otherwisely, one can set 0 or -1 for non-SC cases
         """
         assert not uncertainty, NotImplementedError(uncertainty)
         assert as_float, NotImplementedError(as_float)
         
-        if "(" in v: 
-            # number with uncertainty. then, it cannot be a fraction
-            assert v.strip()[-1]==")",v.strip()[-1]
-            v_unc = v[v.find("("):-1] # uncertainty not implemented
-            v_mean=ast.literal_eval(v[:v.find("(")])
-        elif "/" in v:
-            frac_pos=v.find("/")
-            numerator = ast.literal_eval(v[:frac_pos])
-            denominator = ast.literal_eval(v[frac_pos+1:])
-            assert isinstance(numerator, int), numerator
-            assert isinstance(denominator, int), denominator
-            v_mean=fractions.Fraction(numerator, denominator)
-        else:
-            v_mean=float(v)
-
-        return float(v_mean)
+        try:
+            v_mean = float(v)
+        except ValueError as e:
+            if "(" in v: 
+                # number with uncertainty. then, it cannot be a fraction
+                assert v.strip()[-1]==")",v.strip()[-1]
+                #v_unc = v[v.find("("):-1] # uncertainty not implemented
+                v_mean=ast.literal_eval(v[:v.find("(")])
+            elif "/" in v:
+                frac_pos=v.find("/")
+                numerator = ast.literal_eval(v[:frac_pos])
+                denominator = ast.literal_eval(v[frac_pos+1:])
+                assert isinstance(numerator, int), numerator
+                assert isinstance(denominator, int), denominator
+                v_mean=fractions.Fraction(numerator, denominator)
+            elif "-" in v:
+                hyphen_pos = v.find("-")
+                range_min = ast.literal_eval(v[:hyphen_pos])
+                range_max = ast.literal_eval(v[hyphen_pos+1])
+                assert isinstance(range_min, (int, float)), range_min
+                assert isinstance(range_max, (int, float)), range_max
+                v_mean = (range_max+range_min)/2.0
+            elif '<' in v:
+                v_mean = default
+                warn(f"Expected a numeric expression but non-parsable v: {v}", InvalidFractionException)
+            else:
+                raise e
+        finally:
+            return v_mean
     
 class ElemParser(CellParser):
     """
