@@ -1,5 +1,3 @@
 {
-    "targets": ["max_Tc", "min_Tc", "avg_Tc"],
-    "exception_col": null,
-    "index_column": "index"
+    "targets": ["max_Tc", "min_Tc", "avg_Tc"]
 }

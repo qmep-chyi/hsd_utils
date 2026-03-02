@@ -176,7 +176,8 @@ class BaseDataset(ABC, Sequence):
 
                 minimum_length = 2 if other_df is None else 1 #when self compare, it includes self.
                 if len(duplicated_row)>=minimum_length:
-                    print(f"idx0, duplicates: {idx0}, {duplicated_row}")
+                    duplicated_formulas={k:v.formula for k, v in duplicated_row.items()}
+                    print(f"idx0, duplicates: {idx0}, {duplicated_formulas}")
                     self.duplicated_comps_group[idx0]={
                         k: str(v) for k, v in duplicated_row.items()
                         }
@@ -234,12 +235,14 @@ class BaseDataset(ABC, Sequence):
                     warnings.warn(f"skip {idx}, {exception_case}")
                     pass
                 else: #start validation
-                    if almost_equals_pymatgen_atomic_fraction(self.idx2aux['comps_pymatgen'][idx], comp, rtol=rtol):
-                        pass
-                    else:
-                        assert self.idx2aux['comps_pymatgen'][idx].elements==comp.elements
-                        warnings.warn(f"idx: {idx}, comp:{comp}, comps_pymatgen:{self.idx2aux['comps_pymatgen'][idx]}")
-                        print(f"while norm_fracs(comp):{norm_fracs(comp)}, norm_fracs_comps_pymatgen:{norm_fracs(self.idx2aux['comps_pymatgen'][idx])}")
+                        if almost_equals_pymatgen_atomic_fraction(self.idx2aux['comps_pymatgen'][idx], comp, rtol=rtol):
+                            pass
+                        elif self.idx2aux['comps_pymatgen'][idx] is None:
+                            warnings.warn(f"No valid pymatgen comps exists for idx{idx}: {self[idx]['composition']}")
+                        else:
+                            assert self.idx2aux['comps_pymatgen'][idx].elements==comp.elements
+                            warnings.warn(f"idx: {idx}, comp:{comp}, comps_pymatgen:{self.idx2aux['comps_pymatgen'][idx]}")
+                            print(f"while norm_fracs(comp):{norm_fracs(comp)}, norm_fracs_comps_pymatgen:{norm_fracs(self.idx2aux['comps_pymatgen'][idx])}")
 
     def add_duplicated_comps_column(self, criteria_rule: str, inplace=True):
         """
@@ -330,6 +333,7 @@ class D2TableDataset(BaseDataset):
             df = df[df[exception_col].apply(pd.isna)]
         else:
             pass
+        
         self._df: pd.DataFrame = df.reset_index(drop=True)
 
         if encode_onehot_fracs:
@@ -341,7 +345,7 @@ class D2TableDataset(BaseDataset):
                     self._df.rename(columns={key:str(key+'0')}, inplace=True)
             self.encode_onehot_fracs(parse_pymatgen_comps_col=parse_pymatgen_comps_col)
 
-    def encode_onehot_fracs(self, inplace=True, parse_pymatgen_comps_col:str|None=None,
+    def encode_onehot_fracs(self, inplace=True, parse_pymatgen_comps_col:str|None=None, rule_elements_set:Literal['validation', 'overwrite', 'pass']='validation',
                             rule_invalid_fraction: Literal['all', 'single', 'error']='all'):
         """Initiallize elemental_set, encode composition to the onehot-like multiple columns
         
@@ -352,6 +356,7 @@ class D2TableDataset(BaseDataset):
                 - overwrite attributes (self.-); 
                     onehot_codec, elemental_set
                 - overwrite self.idx2aux[parsed_fracs, parsed_elements, comps_pymatgen]
+                    - note that elements in comps_pymatgen are not ordered
                 - update self.index
                 - If false, raise NotImplementedError
             - composition_col:
@@ -361,7 +366,8 @@ class D2TableDataset(BaseDataset):
                 - 'all' (default): return [None] for every onehot_frac values
                 - 'single': ignore invalid fraction (assign None, consider as 0)
                 - 'error': raise error
-
+            - rule_elements_set:Literal['validation', 'overwrite', 'pass']='validation'
+                - action for the 'elements_set' column on self._df
         """
         assert inplace, NotImplementedError
         df_index =  self._df.index.copy().tolist()
@@ -395,7 +401,14 @@ class D2TableDataset(BaseDataset):
             
 
         onehot_df = pd.DataFrame(onehot_frac_rows, index=self._df.index, columns=self.elemental_set)
-        onehot_df["elements_set"] = ["-".join(element_list_iupac_ordered(i)) for i in self.idx2aux['parsed_elements'].values()]
+        if rule_elements_set=='overwrite':
+            self._df["elements_set"] = ["-".join(element_list_iupac_ordered(i)) for i in self.idx2aux['parsed_elements'].values()]
+        elif rule_elements_set=='validation':
+            assert self._df['elements_set'].tolist()==["-".join(element_list_iupac_ordered(i)) for i in self.idx2aux['parsed_elements'].values()]
+        elif rule_elements_set=='pass':
+            pass
+        else:
+            ValueError("rule_elements_set is wrong")
         self._df=pd.concat([self._df, onehot_df], axis=1)
         self.column_sets["onehot_elements"]=self.elemental_set
         assert self.validation_onehot_frac()
