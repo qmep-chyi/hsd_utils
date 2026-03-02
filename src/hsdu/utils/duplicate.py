@@ -202,34 +202,13 @@ def make_duplicates_group(index, d1_dist_matrix, dinfty_dist_matrix, elements_se
     return merge_overlap(index, duplicates_group, group_rows)
 
 if __name__=="__main__":
+    # TODO: Old code requires refactor
     from hsdu import Dataset
     # merge entries with close compositions
     parser = argparse.ArgumentParser()
-    parser.add_argument('data_path', help="path to the HESC dataset")
+    parser.add_argument('--data_path', help="path to the HESC dataset")
     args=parser.parse_args()
 
     hsd = Dataset(args.data_path)
 
-    assert hsd.df.index.tolist()==list(range(len(hsd)))
-    elements_sets = [hsd.idx2aux["elements_set"][i] for i in hsd.df.index]
-    print(pd.Series(elements_sets).value_counts())
-
-    # make distance matrix
-    onehot_fracs = hsd.onehot_fracs()
-    # chebyshev distance
-    dinfty_dist_matrix = distance_matrix(onehot_fracs, onehot_fracs, metric="l_infty")
-    # L1 distance
-    d1_dist_matrix = cdist(onehot_fracs, onehot_fracs, metric="l1")
-
-    dup_group, group_rows = make_duplicates_group(hsd.df.index, d1_dist_matrix, dinfty_dist_matrix, elements_sets, linfty_cutoff=0.01, l1_cutoff=0.02)
-
-    print(len(dup_group))
-    print(pd.Series(group_rows).value_counts())
-    print([elements_sets[dup_group[i][0]] for i in pd.Series(group_rows).value_counts().index[:10]])
-    
-    #%% test to prevent data leakage (train-test split)
-
-    dup_group, group_rows = make_duplicates_group(hsd.df.index, d1_dist_matrix, dinfty_dist_matrix, elements_sets, linfty_cutoff=0.05, l1_cutoff=0.12, cross_elements_set=True)
-
-    print(len(dup_group))
-    print(pd.Series(group_rows).value_counts())
+    assert hsd._df.index.tolist()==list(range(len(hsd)))
