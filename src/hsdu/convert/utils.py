@@ -114,7 +114,8 @@ class Converter():
             (`elements` and `elements_fractions`) are not matched.
             composition string is parsed by `Composition` from pymatgen.core.composition.
     """
-    def __init__(self, data, convert_config, test:bool = False, output_dir:str|None=None, validate_by_comps:bool=True) -> None:
+    def __init__(self, data, convert_config, test:bool = False, output_dir:str|None=None, validate_by_comps:bool=True,
+                 skip_init_duplicate_group=False) -> None:
         self.config = config_parser(config=convert_config, mode="convert")
         if self.config.get("output_dir") is not None and output_dir is not None:
             raise NameError("two `output_dir` from config file and args")
@@ -136,10 +137,11 @@ class Converter():
             self.dataset = data
         if validate_by_comps:
             self.dataset.validate_by_composition()
-        if self.config.get("duplicates_rule") is not None:
+        if not skip_init_duplicate_group:
             self.dataset.pymatgen_duplicates(rtol=0.02)
-            self.log["duplicated_comps"]=self.dataset.duplicated_comps_group
             self.dataset.add_duplicated_comps_column(criteria_rule=self.config['duplicates_rule'].get("criteria"))
+        if self.config.get("duplicates_rule") is not None:
+            self.log["duplicated_comps"]=self.dataset.duplicated_comps_group
         self.test = test
         self.converted_df: pd.DataFrame
 
