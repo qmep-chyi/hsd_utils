@@ -48,13 +48,13 @@ def element_list_iupac_ordered(elems: Iterable[T]) -> list[T]:
   elif isinstance(elems, list):
     elems_out=elems
   else:
-    raise ValueError(f"invalid type: {elems}")
+    raise TypeError(f"invalid type: {elems}")
 
   #elems_out = [el.symbol if isinstance(el, ElementBase) else el for el in elems_out]
   elems_out = sorted(elems_out, key=lambda s: Element(s).iupac_ordering)
   return elems_out
 
-def norm_fracs(comp: Composition | str, elems: Optional[list]=None, norm:bool=True, assert_iupac_ordered:bool=True):
+def norm_fracs(comp: Composition | str, elems: Optional[list]=None, norm:bool=True, assert_iupac_ordered:bool=False):
     if isinstance(comp, Composition):
         pass
     elif isinstance(comp, str):
@@ -66,7 +66,7 @@ def norm_fracs(comp: Composition | str, elems: Optional[list]=None, norm:bool=Tr
     
     fracs=np.zeros(len(comp))
     if elems is not None:
-        assert elems==element_list_iupac_ordered(elems)
+        assert elems==element_list_iupac_ordered(elems) or assert_iupac_ordered
         elems_to_iter=elems
     else:
         elems_to_iter=element_list_iupac_ordered(comp.elements)
@@ -75,10 +75,12 @@ def norm_fracs(comp: Composition | str, elems: Optional[list]=None, norm:bool=Tr
     return fracs/np.sum(fracs)
 
 def almost_equals_pymatgen_atomic_fraction(a: Composition, b: Composition, rtol: float = 0.1)->bool:
-    if set(a.elements)!=set(b.elements):
+    if a is None or b is None:
         return False
-    a_fracs=norm_fracs(a, elems=a.elements)
-    b_fracs=norm_fracs(b, elems=a.elements)
+    elif set(a.elements)!=set(b.elements):
+        return False
+    a_fracs=norm_fracs(a, elems=a.elements, assert_iupac_ordered=True)
+    b_fracs=norm_fracs(b, elems=a.elements, assert_iupac_ordered=True)
     return np.allclose(a_fracs, b_fracs, rtol=rtol)
 
 def series_comps_gen(el_symbols:list[str], func, inps):

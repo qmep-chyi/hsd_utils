@@ -11,7 +11,7 @@ import unittest
 import importlib.resources as resources
 from pathlib import Path
 
-from hsdu.dataset import D2TableDataset
+from hsdu.dataset import Dataset, D2TableDataset
 from hsdu.convert.utils import Converter 
 from hsdu.convert.feature import  MultiSourceFeaturizer
 
@@ -32,7 +32,8 @@ class Test(unittest.TestCase):
                 test_dataset_path = path
 
         # generate cleaned datatable with comositional columns only
-        converter = Converter(test_dataset_path, "compositional5_merge2maxTc_wholedataset.json")
+        hsd = Dataset(test_dataset_path, exception_col='Exceptions')
+        converter = Converter(hsd, "compositional5_merge2maxTc_wholedataset.json")
         converter.convert(make_dir=True, exist_ok=True)
 
         # featurize from cleand datatable
