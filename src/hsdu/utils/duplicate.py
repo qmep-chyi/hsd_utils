@@ -11,7 +11,25 @@ from pymatgen.core.periodic_table import Element
 from hsdu.dataset import Dataset
 from hsdu.utils.conversion_utils import element_list_iupac_ordered, OneHotFracCodec
 
-def dist4groups_matrix(comps4groups:list[list[Composition]], metric:Literal["cityblock", "chebyshev"], 
+def max_relative_error(xa, xb, symmetric=True):
+    assert symmetric, NotImplementedError
+    out = np.zeros((len(xa), len(xb)))
+    for i in range(len(xa)):
+        for j in range(len(xb)):
+            error4elems=[]
+            for x, y in zip(xa[i], xb[j]):
+                if x==0.0 and y==0.0:
+                    error4elems.append(0.0)
+                else:
+                    error4elems.append(max([
+                        abs((x-y)/x) if x!=0.0 else 0.0,
+                        abs((x-y)/y) if y!=0.0 else 0.0
+                        ]))
+
+            out[i, j]=max(error4elems)
+    return out
+
+def dist4groups_matrix(comps4groups:list[list[Composition]], metric:Literal["cityblock", "chebyshev", "max_sym_relative_error"], 
                        ignore_cross_elemental_set:bool = False, group_cross_elemental_set:bool=False):
     """
     arguments:
@@ -42,26 +60,20 @@ def dist4groups_matrix(comps4groups:list[list[Composition]], metric:Literal["cit
 def compare_dupl_groups(comps4groups:list[list[Composition]],
                         group_names:list[str],
                         ignore_cross_elemental_set:bool=False,
-                        print_output=True):
-    l1_dist4groups_matrix=dist4groups_matrix(comps4groups, metric="cityblock",
-                                             ignore_cross_elemental_set=ignore_cross_elemental_set)
-    l1_dist4groups_matrix=pd.DataFrame(l1_dist4groups_matrix, 
+                        print_output=True, metrices=['cityblock','chebyshev','MSRE']):
+    out=dict()
+    for metric in metrices:
+        out[metric]=dist4groups_matrix(comps4groups, metric=metric,
+                                       ignore_cross_elemental_set=ignore_cross_elemental_set)
+        out[metric]=pd.DataFrame(out[metric], 
                                         columns=group_names, index=group_names)
-    linfty_dist4groups_matrix=dist4groups_matrix(comps4groups, metric="chebyshev",
-                                                 ignore_cross_elemental_set=ignore_cross_elemental_set)
-    linfty_dist4groups_matrix=pd.DataFrame(linfty_dist4groups_matrix,
-                                            columns=group_names, index=group_names)
-    if print_output:
-        print("L1_dist_of groups:")
-        print(l1_dist4groups_matrix)
-        print("L_infty_dist_of groups:")
-        print(linfty_dist4groups_matrix)
+        if print_output:
+            print(f"{metric} of groups:")
+            print(out[metric])
 
-    return dict(
-        linfty = linfty_dist4groups_matrix,
-        l1= l1_dist4groups_matrix)
+    return out
 
-def compare_dupl_groups_old2new(dataset, dup_group, entry_idx2group_idx):
+def compare_dupl_groups_old2new(dataset, dup_group, entry_idx2group_idx, old_none_groupped=True):
     disagreement=False
     out = dict()
     for old_group_index, old_group in dataset.duplicated_comps_group.items():
@@ -81,12 +93,21 @@ def compare_dupl_groups_old2new(dataset, dup_group, entry_idx2group_idx):
             
             out[old_group_index] = dict(
                 dist_matrix=compare_dupl_groups(relative_groups, relative_groups_name))
+    if old_none_groupped:
+        for i, row in dataset._df.iterrows():
+            if i not in dataset.duplicated_comps: # means not groupped (in new groups, len(group)=1)
+                if set([i])!=set(dup_group[entry_idx2group_idx[i]]):
+                    disagreement=True
+                    print(f"old non-groupped[{i}]: new group idx {entry_idx2group_idx[i]}")
+                    print(f"new group idx {entry_idx2group_idx[i]}: {dup_group[entry_idx2group_idx[i]]}")
+
+
     if disagreement:
         return out
                     
 def distance_matrix(comps0:list[Composition] |list[list[float]],
                     comps1:list[Composition] |list[list[float]],
-                    metric:Literal["chebyshev", "cityblock", "euclidean", "L1", "l1", "L2","l2", "L_infty", "maximum", "tchebychev", "l_infty"], elemental_set:list[str]|None = None,
+                    metric:Literal["chebyshev", "cityblock", "euclidean", "L1", "l1", "L2","l2", "L_infty", "maximum", "tchebychev", "l_infty", "max_sym_relative_error", "MSRE"], elemental_set:list[str]|None = None,
                     exclude_expanded_elements:bool=True):
     """wrapper of cdist from scipy.spatial.distance
     
@@ -99,6 +120,7 @@ def distance_matrix(comps0:list[Composition] |list[list[float]],
                 - L2, Euclidean distance. $\sqrt{\sum_i{(x_i-y_i})^2}$
             - "l_infty" | "maximum" | "tchebychev": to "chebyshev"
                 - \\max_i(|x_i-y_i|)
+            - "max_sym_relative_error": $max(max_i|x_i-y_i|/x_i, max_i|x_i-y_i|/y_i))$
         - exclude_expanded_elements:
             if True, ignore elements atomic_number>103. default True.
     """
@@ -123,8 +145,12 @@ def distance_matrix(comps0:list[Composition] |list[list[float]],
     alias_map = {al: "chebyshev" for al in ("L_infty", "maximum", "tchebychev", "l_infty")}
     alias_map = alias_map | {al: "cityblock" for al in ("l1", "L1")}
     alias_map = alias_map | {al: "euclidean" for al in ("l2", "L2")}
-    metric_out: Literal["chebyshev","cityblock","euclidean"]= alias_map.get(metric, metric)
-    return cdist(comps_list[0], comps_list[1], metric=metric_out)
+    alias_map = alias_map | {al: "max_sym_relative_error" for al in ('MSRE', 'msre')}
+    metric_out = alias_map.get(metric, metric)
+    if metric_out == "max_sym_relative_error":
+        return max_relative_error(comps_list[0], comps_list[1], symmetric=True)
+    else:
+        return cdist(comps_list[0], comps_list[1], metric=metric_out)
 
 def comps_pymatgen2elemental_set(pymatgen_comps: Composition):
     """make elements_set list"""
@@ -160,10 +186,15 @@ def merge_overlap(index, duplicates_group, group_rows):
             assert sum([1 if i in v else 0 for v in duplicates_group.values()])==1
         return duplicates_group, group_rows
         
-def make_duplicates_group(index, d1_dist_matrix, dinfty_dist_matrix, elements_sets, linfty_cutoff=0.01, l1_cutoff=0.02, cross_elements_set=False, verbose=True):
+def make_duplicates_group(index, 
+                          dist_matrices:dict, elements_sets_rows:list,
+                          dist_cutoffs:dict=dict(chebyshev=0.01, cityblock=0.02, MSRE=0.02),
+                            cross_elements_set=False, verbose=True):
     if verbose:
-        print(f"start to make duplicates group; linfty_cutoff={linfty_cutoff}, l1_cutoff={l1_cutoff}")
-    assert index.tolist()==list(range(len(elements_sets)))
+        print(f"start to make duplicates group; dist_criteria: {dist_cutoffs}")
+    assert index.tolist()==list(range(len(elements_sets_rows)))
+    assert all(m in dist_matrices for m in dist_cutoffs.keys())
+    criteria_metrices=dist_cutoffs.keys()
     last_dup_group_idx = -1 # so first is 0
     current_group_idx = 0
     duplicates_group = dict()
@@ -180,8 +211,8 @@ def make_duplicates_group(index, d1_dist_matrix, dinfty_dist_matrix, elements_se
             current_group_idx = group_rows[i]
         # process duplicates
         for j in index:
-            if d1_dist_matrix[i, j]<l1_cutoff and dinfty_dist_matrix[i, j]<linfty_cutoff:
-                if cross_elements_set:
+            if all(dist_matrices[m][i, j] < dist_cutoffs[m] for m in criteria_metrices):
+                if cross_elements_set or elements_sets_rows[i]==elements_sets_rows[j]:
                     if j<=i: # just double check
                         assert i in duplicates_group[group_rows[j]]
                     elif j>i:
@@ -189,26 +220,5 @@ def make_duplicates_group(index, d1_dist_matrix, dinfty_dist_matrix, elements_se
                         group_rows[j]=current_group_idx # TODO: maybe I would store multiple values to optimize merge_overlap()
                     else:
                         raise ValueError
-                else:
-                    if elements_sets[i]==elements_sets[j]:
-                        if j<=i: # just double check
-                            assert i in duplicates_group[group_rows[j]]
-                        elif j>i:
-                            duplicates_group[current_group_idx].add(j)
-                            group_rows[j]=current_group_idx
-                        else:
-                            raise ValueError
                                     
     return merge_overlap(index, duplicates_group, group_rows)
-
-if __name__=="__main__":
-    # TODO: Old code requires refactor
-    from hsdu import Dataset
-    # merge entries with close compositions
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--data_path', help="path to the HESC dataset")
-    args=parser.parse_args()
-
-    hsd = Dataset(args.data_path)
-
-    assert hsd._df.index.tolist()==list(range(len(hsd)))
