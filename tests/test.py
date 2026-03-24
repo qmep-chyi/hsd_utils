@@ -59,7 +59,10 @@ class TestDataset(unittest.TestCase):
         
         :param self: Description
         """
-        _ = D2TableDataset(r"/home/chyi/hsd_utils/tests/temp_devs/hesc_dataset_16dec2025 - DataTable.csv", exception_col=None)
+        test_dataset_path: Path=None
+        with resources.as_file(resources.files("hsdu.data.tests") /"full_dataset.csv") as path:
+            test_dataset_path = path if Path(path).is_file() else None
+        _ = D2TableDataset(test_dataset_path, exception_col=None)
         
    
 if __name__=="__main__":

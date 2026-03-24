@@ -1,5 +1,13 @@
 # Utils for HS dataset
 ***Repository for collaboration, not for public share***
+## TODO: ASAP
+* Refactor `tests/temp_new_group_algorithm.py` and other scripts
+    * replace old duplicate group method with new one
+        - old: hsdu.data.Dataset().pymatgen_duplicates(rtol=0.02)
+    * Then, refactor these; to test and document.
+        - temp_new_group_algorithm.py
+        - dev_comps_merger.py
+        - temp_groups_test.py
 
 ## Changes
 * (03 Feb 2026) New Features / functions
@@ -39,8 +47,10 @@ devloped environment: windows 11, python==3.13, uv==0.9.24
 * to use featurizer/converter, `uv sync --dev --extra convert` 
     * As [`matminer` may not support python>3.13](https://github.com/hackingmaterials/matminer/blob/main/pyproject.toml) and many latest envs.
 * (recommended) test (change directory to `tests/`)
-    `uv run python -m unittest test`
-    `uv run python -m unittest test_convert`
+    * `uv run python -m unittest test`
+    * `uv run python -m unittest test_convert`
+    * if required, put full dataset as `hsd_utils/src/hsdu/data/tests/full_dataset.csv`
+
 
 ### Google colab(linux) and pip
 ***To be tested.(leave versions python and major package when test)***

@@ -7,8 +7,6 @@ import pandas as pd
 from scipy.spatial.distance import cdist
 from pymatgen.core import Composition
 from pymatgen.core.periodic_table import Element
-
-from hsdu.dataset import Dataset
 from hsdu.utils.conversion_utils import element_list_iupac_ordered, OneHotFracCodec
 
 def max_relative_error(xa, xb, symmetric=True):
@@ -159,7 +157,7 @@ def comps_pymatgen2elemental_set(pymatgen_comps: Composition):
         elements_sets.append("-".join(element_list_iupac_ordered(comp.elements)))
     return elements_sets
 
-def merge_overlap(index, duplicates_group, group_rows):
+def merge_overlap(index, duplicates_group, group_rows, mode='itself'):
     overlaps=False
     for i in index:
         first_group=-1
@@ -181,44 +179,92 @@ def merge_overlap(index, duplicates_group, group_rows):
     if overlaps:
         return merge_overlap(index, duplicates_group, group_rows)
     else:
-        assert sum(len(set(v)) for v in duplicates_group.values()) == len(index)
+        assert sum(len(set(v)) for v in duplicates_group.values()) == len(index) or mode=='other'
         for i in index:
-            assert sum([1 if i in v else 0 for v in duplicates_group.values()])==1
+            assert sum([1 if i in v else 0 for v in duplicates_group.values()])==1 or mode=='other'
         return duplicates_group, group_rows
-        
-def make_duplicates_group(index, 
-                          dist_matrices:dict, elements_sets_rows:list,
-                          dist_cutoffs:dict=dict(chebyshev=0.01, cityblock=0.02, MSRE=0.02),
-                            cross_elements_set=False, verbose=True):
-    if verbose:
-        print(f"start to make duplicates group; dist_criteria: {dist_cutoffs}")
-    assert index.tolist()==list(range(len(elements_sets_rows)))
-    assert all(m in dist_matrices for m in dist_cutoffs.keys())
-    criteria_metrices=dist_cutoffs.keys()
+
+def group_duplicates_loop(index0, index1, elements_sets_rows0, elements_sets_rows1, dist_cutoffs, dist_matrices, cross_elements_set, mode):
+    criteria_metrices=[k for k, v in dist_cutoffs.items() if v is not None]
     last_dup_group_idx = -1 # so first is 0
     current_group_idx = 0
     duplicates_group = dict()
     group_rows = dict()
 
-    for i in index:
+    for i in index0:
         # init group
         if group_rows.get(i) is None: 
             last_dup_group_idx+=1
-            duplicates_group.setdefault(last_dup_group_idx, {i})
+            if mode=='itself':
+                duplicates_group.setdefault(last_dup_group_idx, [i])
+            elif mode=='other':
+                duplicates_group.setdefault(last_dup_group_idx, [])
+            else:
+                raise ValueError(mode)
             group_rows.setdefault(i, last_dup_group_idx)
             current_group_idx = last_dup_group_idx
         else:
             current_group_idx = group_rows[i]
+        
         # process duplicates
-        for j in index:
+        for j in index1:
             if all(dist_matrices[m][i, j] < dist_cutoffs[m] for m in criteria_metrices):
-                if cross_elements_set or elements_sets_rows[i]==elements_sets_rows[j]:
-                    if j<=i: # just double check
-                        assert i in duplicates_group[group_rows[j]]
-                    elif j>i:
-                        duplicates_group[current_group_idx].add(j)
+                if cross_elements_set or elements_sets_rows0[i]==elements_sets_rows1[j]:
+                    if mode=='other':
+                        duplicates_group[current_group_idx].append(j)
                         group_rows[j]=current_group_idx # TODO: maybe I would store multiple values to optimize merge_overlap()
+                    elif mode=='itself':
+                        if j<=i: # just double check
+                            assert i in duplicates_group[group_rows[j]]
+                        elif j>i:
+                            duplicates_group[current_group_idx].append(j)
+                            group_rows[j]=current_group_idx # TODO: maybe I would store multiple values to optimize merge_overlap()
+                        else:
+                            raise ValueError
                     else:
                         raise ValueError
-                                    
-    return merge_overlap(index, duplicates_group, group_rows)
+    return duplicates_group, group_rows
+
+def make_duplicates_group(index:list|tuple[list], 
+                          dist_matrices:dict, elements_sets_rows:list|tuple[list],
+                          dist_cutoffs:dict=dict(chebyshev=0.01, cityblock=0.02, MSRE=0.02),
+                          cross_elements_set=False, verbose=True,
+                          mode:Literal['itself', 'other']='itself'):
+    """
+    Args:
+    - index: if tuple(list, list), compare two different dataset. else, inbetween.
+    
+    Return:
+    - merge_overlap(): recursively merge groups if close overlapped. finally returns---
+        - duplicates_group: dictionary, 
+            - key: group_idx
+            - value: index of entries belongs to the group
+        - group_rows: list of len(dataset) elements, the duplicates group idx of dataset[idx] belongs to.
+    """
+    if verbose:
+        print(f"start to make duplicates group; dist_criteria: {dist_cutoffs}")
+    
+    if isinstance(index, tuple) or mode=='other':
+        assert len(index)==2
+        assert isinstance(elements_sets_rows, tuple)
+        assert len(elements_sets_rows)==2
+        index0, index1=index
+        elements_sets_rows0, elements_sets_rows1=elements_sets_rows
+        mode='other'
+    elif index==list(range(len(elements_sets_rows))) and mode=='itself':
+        index0=index
+        index1=index
+        elements_sets_rows0=elements_sets_rows
+        elements_sets_rows1=elements_sets_rows
+    else:
+        raise TypeError(f'index{index}, mode{mode}, elements_sets_rows{elements_sets_rows} does not matches')
+
+    assert all(m in dist_matrices for m in dist_cutoffs.keys())
+
+    duplicates_group, group_rows = group_duplicates_loop(index0, index1, elements_sets_rows0, elements_sets_rows1, dist_cutoffs, dist_matrices, cross_elements_set, mode)
+    
+    if mode=='other':
+        assert len(duplicates_group)==len(index0)
+        return duplicates_group, group_rows
+    elif mode=='itself':
+        return merge_overlap(index0, duplicates_group, group_rows, mode)

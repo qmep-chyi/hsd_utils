@@ -143,8 +143,11 @@ class Converter():
                     self.dataset._df['index'] = self.dataset._df.index.tolist()
             pass
         elif self.config.get("duplicates_rule") is not None:
-            self.dataset.pymatgen_duplicates(rtol=0.02)
+            dist_cutoffs = dict(**self.config['duplicates_rule'].get('merge_criteria'))
+            self.dataset.group_duplicates(**dist_cutoffs, save_dir='group_dulicates_log.json')
             self.dataset.add_duplicated_comps_column(criteria_rule=self.config['duplicates_rule'].get("criteria"))
+        else:
+            raise ValueError(self.config.get('duplicates_rule'))
         if self.config.get("duplicates_rule") is not None:
             self.log["duplicated_comps"]=self.dataset.duplicated_comps_group
         self.test = test
@@ -226,10 +229,10 @@ class Converter():
             raise NotImplementedError(config["duplicates_rule"]["criteria"])
     
         idx_to_drop=[]
-        for idx, group_dict in groups.items():
-            merger = TcMerger(idx, criteria, tc_rule)
-            for idx1 in groups[idx].keys():
-                if idx1==idx:
+        for g_idx, group_dict in groups.items():
+            merger = TcMerger(groups[g_idx][0], criteria, tc_rule)
+            for idx1 in groups[g_idx]:
+                if idx1==groups[g_idx][0]:
                     pass
                 elif merger.crit0==criteria[idx1]:
                     merger.idx_to_be_merged.append(idx1)

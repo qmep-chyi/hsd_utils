@@ -19,6 +19,7 @@ from pymatgen.core.periodic_table import Element
 from hsdu.parsers import CellParser, FracParser, ElemParser
 from hsdu.utils.utils import config_parser
 from hsdu.utils.conversion_utils import almost_equals_pymatgen_atomic_fraction, norm_fracs, OneHotFracCodec, element_list_iupac_ordered
+from hsdu.utils.duplicate import make_duplicates_group, distance_matrix, compare_dupl_groups, compare_dupl_groups_old2new, dist4groups_matrix
 
 class ElementsSymbolColWarning(UserWarning):
     """column name is a symbol of element"""
@@ -125,8 +126,6 @@ class BaseDataset(ABC, Sequence):
         assert self.index==list(range(len(self.index)))
         assert all(list(v.keys())==self._df.index.tolist() for _, v in self.idx2aux.items())
         return True
-    
-    #def group_close_comps(self, dinfty_cutoff=0.01, d1_cutoff=0.02):
 
     def pymatgen_duplicates(self, other_df:Optional[pd.DataFrame | pd.Series | list]=None, save_dir=None, exception_map:Optional[dict]=None, rtol=0.1, return_dict:bool=True):
         """
@@ -144,14 +143,14 @@ class BaseDataset(ABC, Sequence):
                 * if not None, other_df should have comps_pymatgen_col column().
                     * **note that it will overwrite `self attributes`**
         
-        
         notes:
             * pymatgen.core.Composition().almost_equals() does not normalizes as I wanted, So I couldn't use that.
 
         arguments 
         other_df:Optional[pd.dataframe]=None
         """
-        warnings.warn("use make_duplicates_group from hsdu.utils.duplicate", DeprecationWarning)
+        raise DeprecationWarning("use make_duplicates_group from hsdu.utils.duplicate")
+        #warnings.warn("use make_duplicates_group from hsdu.utils.duplicate", DeprecationWarning)
 
         self.duplicated_comps_group={}
         self.duplicated_comps=set()
@@ -260,9 +259,9 @@ class BaseDataset(ABC, Sequence):
         for idx0, row0 in self._df.iterrows():
             group_row=np.nan
             if idx0 in self.duplicated_comps_group.keys():
-                for idx1 in self.duplicated_comps_group[idx0].keys():            
-                    cite0=row0["full citation"]
-                    cite1=self._df.loc[idx1, "full citation"]
+                for idx1 in self.duplicated_comps_group[idx0]:            
+                    cite0=row0["doi"]
+                    cite1=self._df.loc[idx1, "doi"]
                     group_row = idx0 if cite0==cite1 else np.nan
             duplicate_groups.append(group_row)
         if inplace:
@@ -345,7 +344,9 @@ class D2TableDataset(BaseDataset):
                     self._df.rename(columns={key:str(key+'0')}, inplace=True)
             self.encode_onehot_fracs(parse_pymatgen_comps_col=parse_pymatgen_comps_col)
 
-    def encode_onehot_fracs(self, inplace=True, parse_pymatgen_comps_col:str|None=None, rule_elements_set:Literal['validation', 'overwrite', 'pass']='validation',
+    def encode_onehot_fracs(self, inplace=True, parse_pymatgen_comps_col:str|None=None,
+                            fixed_elements_set:list[str]|None=None,
+                            rule_elements_set:Literal['validation', 'overwrite', 'pass']='default',
                             rule_invalid_fraction: Literal['all', 'single', 'error']='all'):
         """Initiallize elemental_set, encode composition to the onehot-like multiple columns
         
@@ -366,8 +367,9 @@ class D2TableDataset(BaseDataset):
                 - 'all' (default): return [None] for every onehot_frac values
                 - 'single': ignore invalid fraction (assign None, consider as 0)
                 - 'error': raise error
-            - rule_elements_set:Literal['validation', 'overwrite', 'pass']='validation'
+            - rule_elements_set:Literal['validation', 'overwrite', 'pass', 'default']='default'
                 - action for the 'elements_set' column on self._df
+                - 'default': if exists, 'validation. if not, 'overwirte'.
         """
         assert inplace, NotImplementedError
         df_index =  self._df.index.copy().tolist()
@@ -382,11 +384,16 @@ class D2TableDataset(BaseDataset):
             self.idx2aux['parsed_fracs'] = dict()
             self.idx2aux['parsed_elements'] = dict()
             for idx, pymatgen_comps in enumerate(pymatgen_comps_rows):
-                self.idx2aux['parsed_elements'][idx] = element_list_iupac_ordered(pymatgen_comps.elements)
+                elems = [el.symbol for el in pymatgen_comps.elements]
+                self.idx2aux['parsed_elements'][idx] = element_list_iupac_ordered(elems)
                 self.idx2aux['parsed_fracs'][idx] = [pymatgen_comps[el] for el in self.idx2aux['parsed_elements'][idx]]
 
         self.idx2aux["comps_pymatgen"] = dict(zip(df_index, pymatgen_comps_rows))
-        self.elemental_set=self.compile_elements_set(self.idx2aux["parsed_elements"])
+        if fixed_elements_set is None:
+            self.elemental_set=self.compile_elements_set(self.idx2aux["parsed_elements"])
+        else:
+            self.elemental_set=fixed_elements_set
+            
         self.onehot_codec=OneHotFracCodec(self.elemental_set)
 
         assert rule_invalid_fraction=='all', NotImplementedError(rule_invalid_fraction)
@@ -401,6 +408,14 @@ class D2TableDataset(BaseDataset):
             
 
         onehot_df = pd.DataFrame(onehot_frac_rows, index=self._df.index, columns=self.elemental_set)
+        if rule_elements_set=='default':
+            if 'elements_set' in self._df.columns:
+                rule_elements_set='validation'
+            else:
+                rule_elements_set='overwrite'
+        else:
+            pass
+
         if rule_elements_set=='overwrite':
             self._df["elements_set"] = ["-".join(element_list_iupac_ordered(i)) for i in self.idx2aux['parsed_elements'].values()]
         elif rule_elements_set=='validation':
@@ -408,7 +423,8 @@ class D2TableDataset(BaseDataset):
         elif rule_elements_set=='pass':
             pass
         else:
-            ValueError("rule_elements_set is wrong")
+            raise ValueError(f"rule_elements_set:{rule_elements_set} is wrong")
+
         self._df=pd.concat([self._df, onehot_df], axis=1)
         self.column_sets["onehot_elements"]=self.elemental_set
         assert self.validation_onehot_frac()
@@ -424,7 +440,10 @@ class D2TableDataset(BaseDataset):
         assert all(self._df.columns[first_elem_col:last_elem_col+1]==self.elemental_set)
         return True
 
-    def compile_elements_set(self, parsed_elems_rows:list[list[str]]):        
+    def compile_elements_set(self, parsed_elems_rows:list[list[str]])->list:
+        """
+        return: element_list_iupac_orderd(set(elements_symbols))
+        """        
         elems=set()
         for i in range(len(parsed_elems_rows)):
             elems.update(set(parsed_elems_rows[i]))
@@ -467,7 +486,49 @@ class D2TableDataset(BaseDataset):
         """parse string of a csv cell with fractions in list form"""
         cell_parser = FracParser()
         return self.parse_col(colname, cell_parser, False)
-    
+
+    def group_duplicates(self, other:BaseDataset=None, cityblock=float|None, msre=float|None, chebyshev:float|None=None, cross_elements_set:bool=False, save_dir:str|Path|None=None, update_attrs:bool=True):
+        onehot_fracs = self.onehot_fracs()
+        onehot_fracs1 = onehot_fracs if other is None else other.onehot_fracs()
+        dist_cutoffs=dict(
+            cityblock=cityblock,
+            MSRE=msre,
+            chebyshev=chebyshev
+        )
+        
+        # prepare dist_matrices, elements_sets_rows
+        dist_matrices=dict(
+            chebyshev = distance_matrix(onehot_fracs, onehot_fracs1,
+                                metric="l_infty",
+                                elemental_set=self.elemental_set),
+            cityblock = distance_matrix(onehot_fracs, onehot_fracs1,
+                                metric="l1",
+                                elemental_set=self.elemental_set),
+            MSRE = distance_matrix(onehot_fracs, onehot_fracs1,
+                                metric='max_sym_relative_error',
+                                elemental_set=self.elemental_set)
+        )
+        elements_sets_rows = [self[i]["elements_set"] for i in self.index]
+
+        # make_duplicates_group
+        if other is None:
+            dup_group, idx2group_idx = make_duplicates_group(self.index, dist_matrices,
+                                                                elements_sets_rows, dist_cutoffs,
+                                                                cross_elements_set)
+        else:
+            other_elements_sets_rows = [other[i]["elements_set"] for i in other.index]
+            dup_group, idx2group_idx = make_duplicates_group((self.index, other.index), dist_matrices,
+                                                                (elements_sets_rows, other_elements_sets_rows), dist_cutoffs,
+                                                                cross_elements_set)
+        if update_attrs:
+            self.duplicated_comps_group = {k:list(v) for k, v in dup_group.items()}
+            self.idx2aux['duplicate_group'] = idx2group_idx
+
+        if save_dir is not None:
+            with open(save_dir, 'w', encoding="utf-8") as f:
+                json.dump(self.duplicated_comps_group, f, indent=4, ensure_ascii=False)
+        return dup_group, idx2group_idx
+
 class Dataset(D2TableDataset):
     """
     attributes:
