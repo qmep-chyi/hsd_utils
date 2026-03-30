@@ -59,6 +59,7 @@ class CellParser(ABC):
         args:
             * inp: string of a number. It can be a fraction or floats with uncertainty.
             * default: default None. Otherwisely, one can set 0 or -1 for non-SC cases
+            * as_float: may conserve fraction form as a built-in class `fractions.Fraction`. But it is not supported by `__repr__` of `pymatgen.core.Composition` so assert as_float
         """
         assert not uncertainty, NotImplementedError(uncertainty)
         assert as_float, NotImplementedError(as_float)
@@ -78,6 +79,8 @@ class CellParser(ABC):
                 assert isinstance(numerator, int), numerator
                 assert isinstance(denominator, int), denominator
                 v_mean=fractions.Fraction(numerator, denominator)
+                if as_float:
+                    v_mean=float(v_mean)
             elif "-" in v:
                 hyphen_pos = v.find("-")
                 range_min = ast.literal_eval(v[:hyphen_pos])
@@ -91,6 +94,8 @@ class CellParser(ABC):
             else:
                 raise e
         finally:
+            if as_float:
+                assert v_mean == default or isinstance(v_mean, float)
             return v_mean
     
 class ElemParser(CellParser):

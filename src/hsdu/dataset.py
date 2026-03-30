@@ -84,12 +84,22 @@ class BaseDataset(ABC, Sequence):
         if i < 0 or i >= len(self):
             raise IndexError(i)
 
-        try:
-            out = {k:v[i] for k, v in self.idx2aux.items()}
-        except KeyError as e:
-            raise IndexError(i) from e
-        
-        assert len(set(out.keys()) & set(self._df.loc[i, :].keys()))==0
+        out=dict()
+        for k, v in self.idx2aux.items():
+            try:
+                out[k]=v[i]
+            except KeyError as e:
+                raise IndexError(i) from e
+            except TypeError as e:
+                if k=='comps_pymatgen':
+                        # handle entries have fractions as a 'fractions.Fraction' instance
+                        error_elements = element_list_iupac_ordered(v[i].elements)
+                        fractions=[str(v[i][el]) for el in error_elements]
+                        out[k]= fractions
+                else:
+                    raise e
+            
+            assert len(set(out.keys()) & set(self._df.loc[i, :].keys()))==0
 
         try:
             return out | dict(self._df.loc[i, :])
