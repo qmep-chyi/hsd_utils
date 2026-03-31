@@ -30,14 +30,6 @@ class XuTestHEA(D2TableDataset):
 
         super().__init__(dset_path=csv_path, exception_col=None,
                         parse_pymatgen_comps_col='formula', index_col="xu_index")
-        elem_list=[]
-        frac_list=[]
-        for _, row in self._df.iterrows():
-            comp=Composition(row["formula"])
-            elem_list.append(comp.as_data_dict()["elements"])
-            frac_list.append(
-                [comp.get_atomic_fraction(comp.as_data_dict()["elements"][i])
-                 for i in list(range(comp.as_data_dict()["nelements"]))])
             
 class StanevSuperCon(D2TableDataset):
     """load preprocessed SuperCon csv 

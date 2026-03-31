@@ -27,7 +27,7 @@ from hsdu.utils.duplicate import make_duplicates_group, distance_matrix, compare
 # ##### continue implement duplicated group ######
 # first copied from hsdu.utils.duplicate test codes. delete them (under `if __name__=="__main__"`) after this.
 
-hsd_path = r'C:\Users\chyi\hsd_utils\src\hsdu\data\tests\full_dataset.csv'
+hsd_path = r''
 hsd = Dataset(hsd_path, exception_col='Exceptions')
 
 assert hsd._df.index.tolist()==list(range(len(hsd)))
@@ -36,10 +36,17 @@ print(pd.Series(elements_sets).value_counts())
 
 # make distance matrix
 onehot_fracs = hsd.onehot_fracs()
-# chebyshev distance
-dinfty_dist_matrix = distance_matrix(onehot_fracs, onehot_fracs, metric="chebyshev")
-# L1 distance
-d1_dist_matrix = cdist(onehot_fracs, onehot_fracs, metric="cityblock")
+dist_matrices=dict(
+    chebyshev=distance_matrix(onehot_fracs, onehot_fracs,
+                           metric="l_infty",
+                           elemental_set=hsd.elemental_set),
+    cityblock = distance_matrix(onehot_fracs, onehot_fracs,
+                         metric="l1",
+                         elemental_set=hsd.elemental_set),
+    MSRE = distance_matrix(onehot_fracs, onehot_fracs,
+                           metric='max_sym_relative_error',
+                           elemental_set=hsd.elemental_set)
+)
 
 dup_group, group_rows = make_duplicates_group(hsd._df.index, d1_dist_matrix, dinfty_dist_matrix, elements_sets, linfty_cutoff=0.01, l1_cutoff=0.02)
 

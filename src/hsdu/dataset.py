@@ -428,6 +428,9 @@ class D2TableDataset(BaseDataset):
 
         if rule_elements_set=='overwrite':
             self._df["elements_set"] = ["-".join(element_list_iupac_ordered(i)) for i in self.idx2aux['parsed_elements'].values()]
+            for el in self.elemental_set:
+                if el in self._df.columns:
+                    self._df.drop(columns=[el], inplace=True)
         elif rule_elements_set=='validation':
             assert self._df['elements_set'].tolist()==["-".join(element_list_iupac_ordered(i)) for i in self.idx2aux['parsed_elements'].values()]
         elif rule_elements_set=='pass':
@@ -552,13 +555,15 @@ class Dataset(D2TableDataset):
                  csv_path, 
                  config: str | dict | Path = "default",
                  drop_cols: Optional[list[str]] = None,
-                 exception_col: Optional[str | list[str]] = "Exceptions"):
+                 exception_col: Optional[str | list[str]] = "Exceptions",
+                 encode_onehot_fracs:bool=True):
         self.config = config_parser(config, mode="dataset")
         super().__init__(
             csv_path, 
             drop_cols = self.config.get("drop_cols", drop_cols), 
             index_col= self.config.get("index_column"),
-            exception_col=self.config.get("exception_col", exception_col))
+            exception_col=self.config.get("exception_col", exception_col),
+            encode_onehot_fracs=encode_onehot_fracs)
         #self.validate_elem_frac_length()
 
     def validate_elem_frac_length(self):

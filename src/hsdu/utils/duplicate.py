@@ -1,6 +1,7 @@
 #%%
 import argparse
 from typing import Literal
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -8,6 +9,9 @@ from scipy.spatial.distance import cdist
 from pymatgen.core import Composition
 from pymatgen.core.periodic_table import Element
 from hsdu.utils.conversion_utils import element_list_iupac_ordered, OneHotFracCodec
+
+class DuplicatesWarning(UserWarning):
+    pass
 
 def max_relative_error(xa, xb, symmetric=True):
     assert symmetric, NotImplementedError
@@ -185,24 +189,36 @@ def merge_overlap(index, duplicates_group, group_rows, mode='itself'):
         return duplicates_group, group_rows
 
 def group_duplicates_loop(index0, index1, elements_sets_rows0, elements_sets_rows1, dist_cutoffs, dist_matrices, cross_elements_set, mode):
+    """group close enough entries
+
+    Args:
+        mode: Literal["itself" | "other"]
+            * if mode=='other'
+                * 'group index' is just the index of the 'other' datatable.
+                * do not merge groups (assuming 'other' has no duplicates internally)
+    """
     criteria_metrices=[k for k, v in dist_cutoffs.items() if v is not None]
     last_dup_group_idx = -1 # so first is 0
     current_group_idx = 0
     duplicates_group = dict()
     group_rows = dict()
+    len(str(index0))
 
     for i in index0:
         # init group
         if group_rows.get(i) is None: 
+            # init a new group
             last_dup_group_idx+=1
             if mode=='itself':
                 duplicates_group.setdefault(last_dup_group_idx, [i])
+                current_group_idx = last_dup_group_idx
             elif mode=='other':
                 duplicates_group.setdefault(last_dup_group_idx, [])
+                current_group_idx=None
+                group_rows[i]=current_group_idx
             else:
                 raise ValueError(mode)
             group_rows.setdefault(i, last_dup_group_idx)
-            current_group_idx = last_dup_group_idx
         else:
             current_group_idx = group_rows[i]
         
@@ -211,8 +227,9 @@ def group_duplicates_loop(index0, index1, elements_sets_rows0, elements_sets_row
             if all(dist_matrices[m][i, j] < dist_cutoffs[m] for m in criteria_metrices):
                 if cross_elements_set or elements_sets_rows0[i]==elements_sets_rows1[j]:
                     if mode=='other':
-                        duplicates_group[current_group_idx].append(j)
-                        group_rows[j]=current_group_idx # TODO: maybe I would store multiple values to optimize merge_overlap()
+                        duplicates_group[i].append(j)
+                        assert group_rows.get(i) is None
+                        group_rows[i]=j # TODO: maybe I would store multiple values to optimize merge_overlap()
                     elif mode=='itself':
                         if j<=i: # just double check
                             assert i in duplicates_group[group_rows[j]]
@@ -232,7 +249,7 @@ def make_duplicates_group(index:list|tuple[list],
                           mode:Literal['itself', 'other']='itself'):
     """
     Args:
-    - index: if tuple(list, list), compare two different dataset. else, inbetween.
+    - index: if tuple(list, list), compare two different dataset. else, internally.
     
     Return:
     - merge_overlap(): recursively merge groups if close overlapped. finally returns---
@@ -264,7 +281,8 @@ def make_duplicates_group(index:list|tuple[list],
     duplicates_group, group_rows = group_duplicates_loop(index0, index1, elements_sets_rows0, elements_sets_rows1, dist_cutoffs, dist_matrices, cross_elements_set, mode)
     
     if mode=='other':
-        assert len(duplicates_group)==len(index0)
+        if len(duplicates_group)!=len(index0):
+            warnings.warn('multiple self entries are grouped as duplicates of other entries. If duplicates of self and other datatable are merged in same way, it shoud not happens', DuplicatesWarning)
         return duplicates_group, group_rows
     elif mode=='itself':
         return merge_overlap(index0, duplicates_group, group_rows, mode)

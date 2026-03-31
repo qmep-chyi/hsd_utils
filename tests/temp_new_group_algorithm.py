@@ -98,7 +98,7 @@ from hsdu.dataset import Dataset, D2TableDataset
 from hsdu.utils.conversion_utils import almost_equals_pymatgen_atomic_fraction, element_list_iupac_ordered
 from hsdu.utils.duplicate import make_duplicates_group, distance_matrix, compare_dupl_groups, compare_dupl_groups_old2new, dist4groups_matrix
 
-dataset_path = r"/home/chyi/hsd_utils/src/hsdu/data/tests/full_dataset.csv"
+dataset_path = r".../hsd_utils/src/hsdu/data/tests/full_dataset.csv"
 hsd = Dataset(dataset_path)
 
 # %%

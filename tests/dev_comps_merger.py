@@ -3,11 +3,11 @@
 #%%
 # debudding xgboost_9mar.ipynb
 from hsdu.dataset import Dataset, D2TableDataset
-dataset_path = "/home/chyi/hsd_utils/tests/temp_devs/test_featurized_table.csv"
+dataset_path = ".../hsd_utils/tests/temp_devs/test_featurized_table.csv"
 ftd255=D2TableDataset(dataset_path, exception_col=None, encode_onehot_fracs=False)
-train202=D2TableDataset('/home/chyi/hsd_utils/tests/temp_devs/HESC_train_col450.csv', exception_col=None, encode_onehot_fracs=False, drop_cols=['comps_pymatgen'])
-test49=D2TableDataset('/home/chyi/hsd_utils/tests/temp_devs/HESC_test_col450.csv', exception_col=None, encode_onehot_fracs=False, drop_cols=['comps_pymatgen'])
-hsd = Dataset('/home/chyi/hsd_utils/src/hsdu/data/tests/full_dataset.csv', exception_col='Exceptions')
+train202=D2TableDataset('.../hsd_utils/tests/temp_devs/HESC_train_col450.csv', exception_col=None, encode_onehot_fracs=False, drop_cols=['comps_pymatgen'])
+test49=D2TableDataset('.../hsd_utils/tests/temp_devs/HESC_test_col450.csv', exception_col=None, encode_onehot_fracs=False, drop_cols=['comps_pymatgen'])
+hsd = Dataset('.../hsd_utils/src/hsdu/data/tests/full_dataset.csv', exception_col='Exceptions')
 test49.encode_onehot_fracs(fixed_elements_set=hsd.elemental_set, rule_elements_set='overwrite')
 dupl_group, idx2group=hsd.group_duplicates(other=test49, cityblock=0.01, msre=0.02, update_attrs=False, )
 #%%
@@ -30,13 +30,13 @@ if False:
 
 
                         
-    hsdset_path=r"/home/chyi/hsd_utils/tests/temp_devs/merged_dataset_forward - DataTable.csv"
+    hsdset_path=r".../hsd_utils/tests/temp_devs/merged_dataset_forward - DataTable.csv"
     hsd = Dataset(hsdset_path)
 
     from difflib import SequenceMatcher
     import re
 
-    refs = pd.read_json(Path('/home/chyi/hsd_utils/tests/temp_devs/hescd_refs.json'),orient='index')
+    refs = pd.read_json(Path('.../hsd_utils/tests/temp_devs/hescd_refs.json'),orient='index')
     #%% updating to 09feb2026 version; adding doi columns
     ref_titles_alphanumeric_only = [re.sub(r'[^a-zA-Z0-9]', '', ref) for ref in refs['title'].to_list()]
     short_cite0=""
