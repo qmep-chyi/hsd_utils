@@ -34,6 +34,6 @@
     "output_dir": "temp_devs/",
     "save_compositional5_dir": "compositional5_max_tc.csv",
     "save_log_dir": "compositional5_max_tc.log.json",
-    "keep_original_index_as": "idx_0918",
-    "keep_original_index_from": "index"
+    "keep_original_index_as": "id",
+    "keep_original_index_from": "hesc_id"
 }
