@@ -10,6 +10,7 @@ References
 """
 #%%
 import importlib.resources as resources
+import warnings
 from typing import Optional
 
 import pandas as pd
@@ -18,13 +19,16 @@ from pymatgen.core.composition import Composition
 from hsdu.dataset import D2TableDataset, Dataset
 from hsdu.utils.utils import config_parser
 
+class ExternalDataWarning(UserWarning):
+    pass
 
 class XuTestHEA(D2TableDataset):
-    """reproduce test HEA set of Xu et al. 2025.
+    """Reproduced test HEA set of Xu et al. 2025.
     
-    see supple. Table 1
+    see Supplementary Table S1
     """
     def __init__(self):
+        warnings.warn(r"This data is not covered by the license of this repository but Xu et al., Predicting superconducting temperatures with new hierarchical neural network AI model. Front. Phys. 20, 14205 (2025) DOI:10.15302/frontphys.2025.014205", ExternalDataWarning)
         with resources.as_file(resources.files("hsdu.data.miscs") /"xu2025_test_HEAs.csv") as path:
             csv_path = path
 
@@ -42,6 +46,8 @@ class StanevSuperCon(D2TableDataset):
     """
     def __init__(self, drop_cols = None, exception_col = None,
                  maxlen: Optional[int] = None, treshold_max_tc=12):
+        warnings.warn(r"This data is not covered by the license of this repository but Stanev, V. et al. Machine learning modeling of superconducting critical temperature. npj Comput Mater 4, 29 (2018). (doi: 10.1038/s41524-018-0085-8)", ExternalDataWarning)
+
         with resources.as_file(resources.files("hsdu.data.miscs") /"preprocessed_supercon.csv") as path:
             super().__init__(dset_path=path, drop_cols=drop_cols,
                             exception_col=exception_col,

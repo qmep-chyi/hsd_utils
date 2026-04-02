@@ -66,7 +66,7 @@ class BaseDataset(ABC, Sequence):
     @abstractmethod
     def load_data(self) -> pd.DataFrame:
         pass
-
+    
     def check_index(self):
         """validate index of `self._df` and `values(self.idx2aux)`"""
         df_index=self._df.index.tolist()
@@ -136,6 +136,12 @@ class BaseDataset(ABC, Sequence):
         assert self.index==list(range(len(self.index)))
         assert all(list(v.keys())==self._df.index.tolist() for _, v in self.idx2aux.items())
         return True
+    
+    def get_aux_by_idx(self, idx:int, aux:str | None=None):
+        if aux is not None:
+            return self.idx2aux.get(aux).get(idx)
+        else:
+            return {k:v.get(idx) for k, v in self.idx2aux.items()}
 
     def pymatgen_duplicates(self, other_df:Optional[pd.DataFrame | pd.Series | list]=None, save_dir=None, exception_map:Optional[dict]=None, rtol=0.1, return_dict:bool=True):
         """
@@ -565,6 +571,14 @@ class Dataset(D2TableDataset):
             exception_col=self.config.get("exception_col", exception_col),
             encode_onehot_fracs=encode_onehot_fracs)
         #self.validate_elem_frac_length()
+
+        self.idx_by_hesc_id={v:k for k, v in self._df['hesc_id'].items()}
+    
+    def get_idx_by_hesc_id(self, hesc_id:int):
+        return self.idx_by_hesc_id.get(hesc_id)
+    
+    def get_by_hesc_id(self, hesc_id:int):
+        return self[self.get_idx_by_hesc_id(hesc_id)]
 
     def validate_elem_frac_length(self):
         raise DeprecationWarning

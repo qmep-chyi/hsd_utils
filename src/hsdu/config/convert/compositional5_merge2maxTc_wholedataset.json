@@ -12,13 +12,14 @@
         }
     },
     "keep_cols_from_dataset": [
+        "hesc_id",
         "elements",
         "elements_fraction",
-        "full citation",
+        "doi",
+        "flags",
         "xu_test_set"
     ],
     "drop_cols_after_merge_duplicates":[
-        "full citation",
         "num_valid_tc"
     ],
     "duplicates_rule":{

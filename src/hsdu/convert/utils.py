@@ -253,7 +253,7 @@ class Converter():
         print(f"shape of df before exceptions: {out_df.shape}")
         self.log["exceptions"]["shape(df)_before_exceptions"]=out_df.shape
         # filter1. non_sc_observed
-        out_df = out_df.dropna()
+        out_df = out_df.dropna(subset=('max_Tc', 'min_Tc', 'avg_Tc'))
         print(f"shape of df after pd.dropna: {out_df.shape}")
         self.log["exceptions"]["shape of df after pd.dropna"]=out_df.shape
 
