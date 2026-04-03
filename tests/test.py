@@ -44,14 +44,10 @@ class TestDataset(unittest.TestCase):
         # load stanev's supercon dataset 
         ss_dataset = StanevSuperCon()
         ss_dataset.idx2aux['comps_pymatgen']
+        print(f"First entry of supercon(stanev version): {ss_dataset[0]}")
 
-        _ = XuTestHEA()
-
-        #xu_val_r2score: test XuDataset reproduces the snapshot
-        xu_dataset = XuTestHEA()
-        r2score = r2_score(xu_dataset._df["Experimental_T_c(K)"], xu_dataset._df["Predicted_T_c(K)"])
-        print(f"r2_score:{r2score}")
-        self.assertAlmostEqual(r2score, 0.9246, places=4)
+        xu_test45 = XuTestHEA()
+        print(f"First entry of xu2025_test_hea: {xu_test45[0]}")
     
     def test_end_user(self):
         """

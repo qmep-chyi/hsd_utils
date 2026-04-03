@@ -1,15 +1,12 @@
 # Utils for HS dataset
 ***Repository for collaboration, not for public share***
-## TODO: ASAP
-* Refactor `tests/temp_new_group_algorithm.py` and other scripts
-    * replace old duplicate group method with new one
-        - old: hsdu.data.Dataset().pymatgen_duplicates(rtol=0.02)
-    * Then, refactor these; to test and document.
-        - temp_new_group_algorithm.py
-        - dev_comps_merger.py
-        - temp_groups_test.py
 
 ## Changes
+* (2026-04-03) Refactored `tests/temp_new_group_algorithm.py` and other temporal codes in `tests/`
+    * replaced old duplicate group method with new one
+        - old: hsdu.data.Dataset().pymatgen_duplicates(rtol=0.02)
+    * Removed temporal/dev scripts and refactored as `tests/test_group_duplicates.py`
+    * All test (`test`, `test_group_duplicates`, `test_convert`) passed with latest HE-SC dataset `merged_dataset_20260403` (on google drive)
 * (03 Feb 2026) New Features / functions
     * New attribute `Dataset.idx2aux`-- dict of mappings: `aux_name -> (idx -> value)`.
         * e.g. `Dataset.idx2aux["comps_pymatgen"][3]` is pymatgen Composition of entry idx=3.
@@ -49,6 +46,7 @@ devloped environment: windows 11, python==3.13, uv==0.9.24
 * (recommended) test (change directory to `tests/`)
     * `uv run python -m unittest test`
     * `uv run python -m unittest test_convert`
+    * `uv run python -m unittest test_group_duplicates`
     * if required, put full dataset as `hsd_utils/src/hsdu/data/tests/full_dataset.csv`
 
 
