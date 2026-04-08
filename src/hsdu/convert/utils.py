@@ -43,6 +43,16 @@ class TcMerger():
     
     @abstractmethod
     def merge_method(self, five_col_rows: pd.DataFrame, targets: list[str])->dict:
+        """merge T_cs of datatable
+        
+        Args:
+            * five_col_rows: pandas.DataFrame() with some entries (rows) with Tc values.
+                * Column of T_c values: Literal['max_Tc', 'min_Tc', 'avg_Tc']
+        Return:
+            * Example cases: 
+                * {'max_Tc': 6.6, 'avg_Tc': 7.0, 'max_Tc': 7.2}
+                * {'max_Tc': 6.6}
+        """
         raise NotImplementedError
 
     def re_init(self, idx, init_config_criteria:bool=False):
@@ -88,8 +98,6 @@ class TcMerger():
                 * e.g. duplicated_comps_group={1:{1:..., 2:..., 6:...}, 4:{4:..., 9:...}}
                     it means that entry(idx=1) have 2 duplicates, (idx=2,6), 
                     while entry(idx=4) have one(idx=9).
-
-
         """
         if len(self.idx_to_be_merged)>0:
             dict = self.merge_method(df.loc[[self.idx0]+self.idx_to_be_merged.copy()], targets)

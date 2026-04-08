@@ -45,14 +45,17 @@ class StanevSuperCon(D2TableDataset):
         * note that treshold_max_tc is hard coded, because it is close to the 5213 entries of xu et al
     """
     def __init__(self, drop_cols = None, exception_col = None,
-                 maxlen: Optional[int] = None, treshold_max_tc=12):
+                 maxlen: Optional[int] = None,
+                 treshold_max_tc=12,
+                 encode_onehot_fracs:bool=True):
         warnings.warn(r"This data is not covered by the license of this repository but Stanev, V. et al. Machine learning modeling of superconducting critical temperature. npj Comput Mater 4, 29 (2018). (doi: 10.1038/s41524-018-0085-8)", ExternalDataWarning)
 
         with resources.as_file(resources.files("hsdu.data.miscs") /"preprocessed_supercon.csv") as path:
             super().__init__(dset_path=path, drop_cols=drop_cols,
                             exception_col=exception_col,
-                            index_col="index", encode_onehot_fracs=True, 
-                            parse_pymatgen_comps_col="name")
+                            index_col='index',
+                            encode_onehot_fracs=encode_onehot_fracs, 
+                            parse_pymatgen_comps_col='name')
         
         elem_list=[]
         frac_list=[]
