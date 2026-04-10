@@ -233,14 +233,13 @@ def group_duplicates_loop(index0, index1, dupl_groups, idx2gid, dist_cutoffs, di
         if idx2gid.get(index0[i]) is None: 
             # init a new group
             last_dup_group_idx+=1 # is a new group_idx
-            assert dupl_groups.get(last_dup_group_idx) is None
+            assert dupl_groups.get(last_dup_group_idx) is None or mode=='other'
             if mode=='itself':
                 dupl_groups.setdefault(last_dup_group_idx, [index0[i]])
                 current_group_idx = last_dup_group_idx
                 idx2gid.setdefault(index0[i], last_dup_group_idx)
             elif mode=='other':
-                # in this case, duplicates_group maps `last_dup_group_idx' to index1.
-                dupl_groups.setdefault(last_dup_group_idx, [])
+                # in this case, duplicates_group maps index1(key) to duplicate entries in index0(value, as a list[int])
                 current_group_idx=None
                 idx2gid[index0[i]]=None
             else:
@@ -252,8 +251,9 @@ def group_duplicates_loop(index0, index1, dupl_groups, idx2gid, dist_cutoffs, di
         for j in range(len(index1)):
             if all(dist_matrices[m][i, j] < dist_cutoffs[m] for m in criteria_metrices):
                 if mode=='other':
-                    dupl_groups[index0[i]].append(index1[j])
-                    assert idx2gid.get(index0[i]) is None
+                    dupl_groups[index1[j]]=dupl_groups.get(index1[j], [])
+                    dupl_groups[index1[j]].append(index0[i])
+                    assert idx2gid.get(index1[j]) is None
                     idx2gid[index0[i]]=index1[j] # TODO: maybe I would store multiple values to optimize merge_overlap()
                 elif mode=='itself':
                     if j<=i: # just double check

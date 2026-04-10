@@ -33,13 +33,16 @@ class TcMerger():
         self.crit0 = criteria[idx]
         self.idx_to_be_merged=[]
         
-        if rule=="all_tcs":
-            self.merge_method=self.merge_all_tcs
-        elif rule=="max_Tc":
-            self.merge_method=self.merge_to_single_row
-        else:
-            raise ValueError(rule)
         self.rule=rule
+
+        if self.rule['order']=="all_tcs":
+            self.merge_method=self.merge_all_tcs
+        elif self.rule['order']=="highest":
+            self.merge_method=self.merge_to_single_row
+            if self.rule.get('sort_by') is None:
+                raise ValueError("'sort_by' key should exist' if self.rule['order']=='highest'")
+        else:
+            raise NotImplementedError(rule)
     
     @abstractmethod
     def merge_method(self, five_col_rows: pd.DataFrame, targets: list[str])->dict:
@@ -47,7 +50,7 @@ class TcMerger():
         
         Args:
             * five_col_rows: pandas.DataFrame() with some entries (rows) with Tc values.
-                * Column of T_c values: Literal['max_Tc', 'min_Tc', 'avg_Tc']
+                * Default T_c columns: Literal['max_Tc', 'min_Tc', 'avg_Tc']
         Return:
             * Example cases: 
                 * {'max_Tc': 6.6, 'avg_Tc': 7.0, 'max_Tc': 7.2}
@@ -78,10 +81,10 @@ class TcMerger():
         return out
 
     def merge_to_single_row(self, five_col_rows:pd.DataFrame, targets: list[str]=["max_Tc", "min_Tc", "avg_Tc"])->dict:
-        if self.rule=="max_Tc": # choose row have highest Tc.
-            out = five_col_rows.sort_values(by=self.rule, ascending=False)
-        elif self.rule=="min_Tc": # choose row have lowest Tc.
-            out = five_col_rows.sort_values(by=self.rule, ascending=True)
+        if self.rule['order']=="highest": # choose row have highest Tc.
+            out = five_col_rows.sort_values(by=self.rule['sort_by'], ascending=False)
+        elif self.rule['order']=="lowest": # choose row have lowest Tc.
+            out = five_col_rows.sort_values(by=self.rule['sort_by'], ascending=True)
         else:
             raise ValueError
         return out.loc[:,targets].iloc[0].to_dict()
@@ -181,7 +184,19 @@ class Converter():
             self.converted_df = out_df
     
     def convert_tables(self, dataset: Dataset, simple_target=False):
+        """ convert the HE-SC rawdata table to the cleaned table.
+
+        Args:
+            * simple_target: if True, just load `targets` columns. mak
+        """
         config=self.config
+        
+        if config.get('simple_target') is None:
+            config['simple_target']=simple_target
+        elif simple_target==config['simple_target']:
+            pass
+        else:
+            raise ValueError(config['simple_target'], simple_target)
         targets=dataset.config["targets"]
         exceptions=config.get("exceptions")
         if exceptions is None:

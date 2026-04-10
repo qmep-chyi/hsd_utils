@@ -551,47 +551,57 @@ class D2TableDataset(BaseDataset):
             else:
                 inset_idx0=self._df.index.to_list()
                 inset_idx1=inset_idx0
-            assert len(inset_idx0)==group_len
-            assert len(inset_idx1)==elements_set_counts_dict1[elem_set] or mode=='itself'
 
-            onehot_fracs = [onehot_fracs[i] for i in inset_idx0]
-            
-            if mode=='itself':
-                onehot_fracs1 = onehot_fracs
+            if len(inset_idx1)>0:
+                # if mode=='other', it can be 0 (no entry with that elem set exist)
+                assert len(inset_idx0)==group_len
+                assert len(inset_idx1)==elements_set_counts_dict1.get(elem_set, 0) or mode=='itself' # when no entry in 'other' with elem_set
+
+                onehot_fracs = [onehot_fracs[i] for i in inset_idx0]
+                
+                if mode=='itself':
+                    onehot_fracs1 = onehot_fracs
+                else:
+                    onehot_fracs1 = other.onehot_fracs()
+                    onehot_fracs1 = [onehot_fracs1[i] for i in inset_idx1]
+
+                dist_cutoffs=dict(
+                    cityblock=cityblock,
+                    MSRE=msre,
+                    chebyshev=chebyshev
+                )
+                
+                # prepare dist_matrices
+                dist_matrices=dict(
+                    chebyshev = distance_matrix(onehot_fracs, onehot_fracs1,
+                                        metric="l_infty",
+                                        elemental_set=self.elemental_set),
+                    cityblock = distance_matrix(onehot_fracs, onehot_fracs1,
+                                        metric="l1",
+                                        elemental_set=self.elemental_set),
+                    MSRE = distance_matrix(onehot_fracs, onehot_fracs1,
+                                        metric='max_sym_relative_error',
+                                        elemental_set=self.elemental_set)
+                )
+
+                # make_duplicates_group
+                dup_group, idx2group_idx = make_duplicates_group(inset_idx0, inset_idx1, dup_group, idx2group_idx, dist_matrices,
+                                                                        dist_cutoffs,
+                                                                        mode=mode, verbose=verbose)
             else:
-                onehot_fracs1 = other.onehot_fracs()
-                onehot_fracs1 = [onehot_fracs1[i] for i in inset_idx1]
-
-            dist_cutoffs=dict(
-                cityblock=cityblock,
-                MSRE=msre,
-                chebyshev=chebyshev
-            )
-            
-            # prepare dist_matrices
-            dist_matrices=dict(
-                chebyshev = distance_matrix(onehot_fracs, onehot_fracs1,
-                                    metric="l_infty",
-                                    elemental_set=self.elemental_set),
-                cityblock = distance_matrix(onehot_fracs, onehot_fracs1,
-                                    metric="l1",
-                                    elemental_set=self.elemental_set),
-                MSRE = distance_matrix(onehot_fracs, onehot_fracs1,
-                                    metric='max_sym_relative_error',
-                                    elemental_set=self.elemental_set)
-            )
-
-            # make_duplicates_group
-            dup_group, idx2group_idx = make_duplicates_group(inset_idx0, inset_idx1, dup_group, idx2group_idx, dist_matrices,
-                                                                    dist_cutoffs,
-                                                                    mode=mode, verbose=verbose)
+                assert mode=='other'
         if update_attrs:
             self.duplicated_comps_group = {k:list(v) for k, v in dup_group.items()}
             self.idx2aux['duplicate_group'] = idx2group_idx
 
         if save_dir is not None:
             with open(save_dir, 'w', encoding="utf-8") as f:
-                json.dump(self.duplicated_comps_group, f, indent=4, ensure_ascii=False)
+                log_duplicates = dict()
+                onehot_fracs = self.onehot_fracs()
+                for k, v in  self.duplicated_comps_group.items():
+                    log_duplicates[k]={idx: str(self.onehot_codec.decode(onehot_fracs[idx])) for idx in v}
+                    # add composition string for information
+                json.dump(log_duplicates, f, indent=4, ensure_ascii=False)
         return dup_group, idx2group_idx
 
 class Dataset(D2TableDataset):

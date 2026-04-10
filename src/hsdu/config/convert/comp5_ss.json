@@ -1,14 +1,26 @@
 {
     "exceptions":null,
     "keep_cols_from_dataset": [
-        "elements",
-        "elements_fraction"
+        "name"
     ],
     "drop_cols_after_merge_duplicates":[],
-    "dataset_config": "default_forward.json",
+    "duplicates_rule":{
+        "tc": {
+            "order": "highest",
+            "sort_by": "Tc0"
+        },
+        "criteria": "dataset",
+        "merge_criteria":{
+            "cityblock": 0.01,
+            "msre": 0.02,
+            "cross_elements_set": false
+        }
+    },
+    "dataset_config": "default.json",
+    "simple_target": true,
     "output_dir": "temp_devs/",
-    "save_compositional5_dir": "compositional5_ss.csv",
-    "save_log_dir": "compositional5_ss.log.json",
+    "save_compositional5_dir": "comp5_supercon.csv",
+    "save_log_dir": "comp5_supercon.log.json",
     "keep_original_index_as": "index",
     "keep_original_index_from": null
 }
