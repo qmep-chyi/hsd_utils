@@ -162,6 +162,10 @@ def comps_pymatgen2elemental_set(pymatgen_comps: Composition):
     return elements_sets
 
 def merge_overlap(index, duplicates_group, group_rows, mode='itself'):
+    """ merging overlapped groups
+    
+    leave 'first group' and remove others.
+    """
     overlaps=False
     for i in index:
         first_group=-1
@@ -175,7 +179,10 @@ def merge_overlap(index, duplicates_group, group_rows, mode='itself'):
         if len(other_groups)>0:
             overlaps=True
             for j in other_groups:
-                duplicates_group[first_group].update(duplicates_group[j])
+                for idx1 in duplicates_group[j]:
+                    # if other group's idx not in first group, append.
+                    if idx1 not in duplicates_group[first_group]:
+                        duplicates_group[first_group].append(idx1)
                 for k in duplicates_group[j]:
                     group_rows[k]=first_group
                 duplicates_group.pop(j)
@@ -183,69 +190,89 @@ def merge_overlap(index, duplicates_group, group_rows, mode='itself'):
     if overlaps:
         return merge_overlap(index, duplicates_group, group_rows)
     else:
-        assert sum(len(set(v)) for v in duplicates_group.values()) == len(index) or mode=='other'
+        # if recursion finished, mode=='itself', all the index of the current set belongs to only one group.
+        #assert sum(len(duplicates_group[gidx]) for gidx in current_set_groups) == len(index) or mode=='other'
+        if mode=='itself':
+            current_set_groups = set([group_rows[i] for i in index])
+            sum_groupped_indices=0
+            for gidx in current_set_groups:
+                assert all([i in index for i in duplicates_group[gidx]])
+                sum_groupped_indices+=len(duplicates_group[gidx])
+            assert sum_groupped_indices==len(index)
+                
+
         for i in index:
             assert sum([1 if i in v else 0 for v in duplicates_group.values()])==1 or mode=='other'
         return duplicates_group, group_rows
 
-def group_duplicates_loop(index0, index1, elements_sets_rows0, elements_sets_rows1, dist_cutoffs, dist_matrices, cross_elements_set, mode):
+def group_duplicates_loop(index0, index1, dupl_groups, idx2gid, dist_cutoffs, dist_matrices, mode):
     """group close enough entries
 
     Args:
+        dupl_groups: mapping, duplicates `group_idx` to 'index0'
+        idx2gid: mapping, 'index0' to 'group_idx'
         mode: Literal["itself" | "other"]
             * if mode=='other'
                 * 'group index' is just the index of the 'other' datatable.
                 * do not merge groups (assuming 'other' has no duplicates internally)
     """
     criteria_metrices=[k for k, v in dist_cutoffs.items() if v is not None]
-    last_dup_group_idx = -1 # so first is 0
-    current_group_idx = 0
-    duplicates_group = dict()
-    group_rows = dict()
-    len(str(index0))
+    if len(dupl_groups)!=0:
+        # note that keys of dupl_groups are not 
+        last_dup_group_idx = max(dupl_groups.keys())
+    else:
+        # first time, running with empty dupl_groups and idx2gid
+        assert len(dupl_groups)==0 and len(idx2gid)==0
+        last_dup_group_idx = -1
+    current_group_idx = last_dup_group_idx+1
+    
+    assert all([(len(index0), len(index1))==matrix.shape for _, matrix in dist_matrices.items()])
 
-    for i in index0:
+    for i in range(len(index0)):
         # init group
-        if group_rows.get(i) is None: 
+        if idx2gid.get(index0[i]) is None: 
             # init a new group
-            last_dup_group_idx+=1
+            last_dup_group_idx+=1 # is a new group_idx
+            assert dupl_groups.get(last_dup_group_idx) is None or mode=='other'
             if mode=='itself':
-                duplicates_group.setdefault(last_dup_group_idx, [i])
+                dupl_groups.setdefault(last_dup_group_idx, [index0[i]])
                 current_group_idx = last_dup_group_idx
+                idx2gid.setdefault(index0[i], last_dup_group_idx)
             elif mode=='other':
-                duplicates_group.setdefault(last_dup_group_idx, [])
+                # in this case, duplicates_group maps index1(key) to duplicate entries in index0(value, as a list[int])
                 current_group_idx=None
-                group_rows[i]=current_group_idx
+                idx2gid[index0[i]]=None
             else:
                 raise ValueError(mode)
-            group_rows.setdefault(i, last_dup_group_idx)
         else:
-            current_group_idx = group_rows[i]
+            current_group_idx = idx2gid[index0[i]]
         
         # process duplicates
-        for j in index1:
+        for j in range(len(index1)):
             if all(dist_matrices[m][i, j] < dist_cutoffs[m] for m in criteria_metrices):
-                if cross_elements_set or elements_sets_rows0[i]==elements_sets_rows1[j]:
-                    if mode=='other':
-                        duplicates_group[i].append(j)
-                        assert group_rows.get(i) is None
-                        group_rows[i]=j # TODO: maybe I would store multiple values to optimize merge_overlap()
-                    elif mode=='itself':
-                        if j<=i: # just double check
-                            assert i in duplicates_group[group_rows[j]]
-                        elif j>i:
-                            duplicates_group[current_group_idx].append(j)
-                            group_rows[j]=current_group_idx # TODO: maybe I would store multiple values to optimize merge_overlap()
-                        else:
-                            raise ValueError
+                if mode=='other':
+                    dupl_groups[index1[j]]=dupl_groups.get(index1[j], [])
+                    dupl_groups[index1[j]].append(index0[i])
+                    assert idx2gid.get(index1[j]) is None
+                    idx2gid[index0[i]]=index1[j] # TODO: maybe I would store multiple values to optimize merge_overlap()
+                elif mode=='itself':
+                    if j<=i: # just double check
+                        assert index0[i] in dupl_groups[idx2gid[index1[j]]]
+                    elif j>i:
+                        if index1[j] not in dupl_groups[current_group_idx]:
+                            dupl_groups[current_group_idx].append(index1[j])
+                        idx2gid[index1[j]]=current_group_idx # TODO: maybe I would store multiple values to optimize merge_overlap()
                     else:
                         raise ValueError
-    return duplicates_group, group_rows
+                else:
+                    raise ValueError
+    return dupl_groups, idx2gid
 
-def make_duplicates_group(index:list|tuple[list], 
-                          dist_matrices:dict, elements_sets_rows:list|tuple[list],
+def make_duplicates_group(index0:list[int], index1:list[int],
+                          dupl_groups, idx2group_idx,
+                          dist_matrices:dict,
                           dist_cutoffs:dict=dict(chebyshev=0.01, cityblock=0.02, MSRE=0.02),
-                          cross_elements_set=False, verbose=True,
+                          verbose=True,
                           mode:Literal['itself', 'other']='itself'):
     """
     Args:
@@ -260,25 +287,10 @@ def make_duplicates_group(index:list|tuple[list],
     """
     if verbose:
         print(f"start to make duplicates group; dist_criteria: {dist_cutoffs}")
-    
-    if isinstance(index, tuple) or mode=='other':
-        assert len(index)==2
-        assert isinstance(elements_sets_rows, tuple)
-        assert len(elements_sets_rows)==2
-        index0, index1=index
-        elements_sets_rows0, elements_sets_rows1=elements_sets_rows
-        mode='other'
-    elif index==list(range(len(elements_sets_rows))) and mode=='itself':
-        index0=index
-        index1=index
-        elements_sets_rows0=elements_sets_rows
-        elements_sets_rows1=elements_sets_rows
-    else:
-        raise TypeError(f'index{index}, mode{mode}, elements_sets_rows{elements_sets_rows} does not matches')
 
     assert all(m in dist_matrices for m in dist_cutoffs.keys())
 
-    duplicates_group, group_rows = group_duplicates_loop(index0, index1, elements_sets_rows0, elements_sets_rows1, dist_cutoffs, dist_matrices, cross_elements_set, mode)
+    duplicates_group, group_rows = group_duplicates_loop(index0, index1, dupl_groups, idx2group_idx, dist_cutoffs, dist_matrices, mode)
     
     if mode=='other':
         if len(duplicates_group)!=len(index0):

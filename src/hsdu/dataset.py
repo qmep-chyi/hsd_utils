@@ -260,8 +260,10 @@ class BaseDataset(ABC, Sequence):
                             print(f"while norm_fracs(comp):{norm_fracs(comp)}, norm_fracs_comps_pymatgen:{norm_fracs(self.idx2aux['comps_pymatgen'][idx])}")
 
     def add_duplicated_comps_column(self, criteria_rule: str, inplace=True):
-        """
-        run self.pymatgen_duplicates() first!
+        """ Prepare to merge duplicated rows. duplicates groups 
+        
+        requires `self.duplicated_comps_group`
+        run `self.group_duplicates(other=None)` first!
         """
         warnings.warn("use make_duplicates_group from hsdu.utils.duplicate", DeprecationWarning)
         try:
@@ -272,14 +274,22 @@ class BaseDataset(ABC, Sequence):
 
         assert criteria_rule in ['single_ref', 'dataset'], NotImplementedError(criteria_rule)
         duplicate_groups=[] # will be a new column, group name = first instance idx(in self.dataset.duplicated_comps_group.keys)
-        for idx0, row0 in self._df.iterrows():
-            group_row=np.nan
-            if idx0 in self.duplicated_comps_group.keys():
-                for idx1 in self.duplicated_comps_group[idx0]:            
-                    cite0=row0["doi"]
-                    cite1=self._df.loc[idx1, "doi"]
-                    group_row = idx0 if cite0==cite1 else np.nan
-            duplicate_groups.append(group_row)
+        if criteria_rule=='single_ref':
+            for idx0, row0 in self._df.iterrows():
+                group_row=np.nan
+                idx0_group = self.idx2aux['duplicate_group'][idx0]
+                if idx0_group in self.duplicated_comps_group.keys():
+                    # previously, it was 'idx0 in self...'. Since `f738577`(Mar 24, 2026) it was wrong. 
+                    # some tests requires (If merge_duplicates results are consistent)
+                    for idx1 in self.duplicated_comps_group[idx0]:            
+                        cite0=row0["doi"]
+                        cite1=self._df.loc[idx1, "doi"]
+                        group_row = idx0_group if cite0==cite1 else np.nan
+                duplicate_groups.append(group_row)
+        elif criteria_rule=='dataset':
+            duplicate_groups = self.idx2aux['duplicate_group']
+        else:
+            raise NotImplementedError(criteria_rule)
         if inplace:
             self._df['duplicated_group']=duplicate_groups
         return duplicate_groups
@@ -506,46 +516,92 @@ class D2TableDataset(BaseDataset):
         cell_parser = FracParser()
         return self.parse_col(colname, cell_parser, False)
 
-    def group_duplicates(self, other:BaseDataset=None, cityblock=float|None, msre=float|None, chebyshev:float|None=None, cross_elements_set:bool=False, save_dir:str|Path|None=None, update_attrs:bool=True):
-        onehot_fracs = self.onehot_fracs()
-        onehot_fracs1 = onehot_fracs if other is None else other.onehot_fracs()
-        dist_cutoffs=dict(
-            cityblock=cityblock,
-            MSRE=msre,
-            chebyshev=chebyshev
-        )
-        
-        # prepare dist_matrices, elements_sets_rows
-        dist_matrices=dict(
-            chebyshev = distance_matrix(onehot_fracs, onehot_fracs1,
-                                metric="l_infty",
-                                elemental_set=self.elemental_set),
-            cityblock = distance_matrix(onehot_fracs, onehot_fracs1,
-                                metric="l1",
-                                elemental_set=self.elemental_set),
-            MSRE = distance_matrix(onehot_fracs, onehot_fracs1,
-                                metric='max_sym_relative_error',
-                                elemental_set=self.elemental_set)
-        )
-        elements_sets_rows = [self[i]["elements_set"] for i in self.index]
+    def group_duplicates(self, other:BaseDataset=None, cityblock=float|None, msre=float|None, chebyshev:float|None=None, cross_elements_set:bool=False, save_dir:str|Path|None=None, update_attrs:bool=True, verbose:bool=False):
+        """ group close enough compositions
 
-        # make_duplicates_group
-        if other is None:
-            dup_group, idx2group_idx = make_duplicates_group(self.index, dist_matrices,
-                                                                elements_sets_rows, dist_cutoffs,
-                                                                cross_elements_set)
+        return: dup_group, idx2group_idx
+            * dup_group: {group_index: indices of groupped entries}
+            * idx2group_idx: {index: group_index}
+        """
+        if not cross_elements_set:
+            elements_set_counts_dict0 = self._df['elements_set'].value_counts().to_dict()
+            if other is not None:
+                elements_set_counts_dict1 = other._df['elements_set'].value_counts().to_dict()
+            else:
+                elements_set_counts_dict1 = elements_set_counts_dict0
+        elif cross_elements_set:
+            warnings.warn('cross_elements_set is False, possibly take long time to group duplicate (Code is not optimised)', UserWarning)
+            elements_set_counts_dict0 = {'not_cross_elements_set': len(self)}
         else:
-            other_elements_sets_rows = [other[i]["elements_set"] for i in other.index]
-            dup_group, idx2group_idx = make_duplicates_group((self.index, other.index), dist_matrices,
-                                                                (elements_sets_rows, other_elements_sets_rows), dist_cutoffs,
-                                                                cross_elements_set)
+            raise NotImplementedError
+        
+        if other is not None:
+            mode='other'
+        else:
+            mode='itself'
+
+        dup_group=dict()
+        idx2group_idx=dict()
+
+        for elem_set, group_len in elements_set_counts_dict0.items():
+            onehot_fracs = self.onehot_fracs()
+            if elem_set!='not_cross_elements_set':
+                inset_idx0=[i for i in self._df.index[self._df['elements_set']==elem_set]]
+                inset_idx1=inset_idx0 if other is None else [i for i in other._df.index[other._df['elements_set']==elem_set]]
+            else:
+                inset_idx0=self._df.index.to_list()
+                inset_idx1=inset_idx0
+
+            if len(inset_idx1)>0:
+                # if mode=='other', it can be 0 (no entry with that elem set exist)
+                assert len(inset_idx0)==group_len
+                assert len(inset_idx1)==elements_set_counts_dict1.get(elem_set, 0) or mode=='itself' # when no entry in 'other' with elem_set
+
+                onehot_fracs = [onehot_fracs[i] for i in inset_idx0]
+                
+                if mode=='itself':
+                    onehot_fracs1 = onehot_fracs
+                else:
+                    onehot_fracs1 = other.onehot_fracs()
+                    onehot_fracs1 = [onehot_fracs1[i] for i in inset_idx1]
+
+                dist_cutoffs=dict(
+                    cityblock=cityblock,
+                    MSRE=msre,
+                    chebyshev=chebyshev
+                )
+                
+                # prepare dist_matrices
+                dist_matrices=dict(
+                    chebyshev = distance_matrix(onehot_fracs, onehot_fracs1,
+                                        metric="l_infty",
+                                        elemental_set=self.elemental_set),
+                    cityblock = distance_matrix(onehot_fracs, onehot_fracs1,
+                                        metric="l1",
+                                        elemental_set=self.elemental_set),
+                    MSRE = distance_matrix(onehot_fracs, onehot_fracs1,
+                                        metric='max_sym_relative_error',
+                                        elemental_set=self.elemental_set)
+                )
+
+                # make_duplicates_group
+                dup_group, idx2group_idx = make_duplicates_group(inset_idx0, inset_idx1, dup_group, idx2group_idx, dist_matrices,
+                                                                        dist_cutoffs,
+                                                                        mode=mode, verbose=verbose)
+            else:
+                assert mode=='other'
         if update_attrs:
             self.duplicated_comps_group = {k:list(v) for k, v in dup_group.items()}
             self.idx2aux['duplicate_group'] = idx2group_idx
 
         if save_dir is not None:
             with open(save_dir, 'w', encoding="utf-8") as f:
-                json.dump(self.duplicated_comps_group, f, indent=4, ensure_ascii=False)
+                log_duplicates = dict()
+                onehot_fracs = self.onehot_fracs()
+                for k, v in  self.duplicated_comps_group.items():
+                    log_duplicates[k]={idx: str(self.onehot_codec.decode(onehot_fracs[idx])) for idx in v}
+                    # add composition string for information
+                json.dump(log_duplicates, f, indent=4, ensure_ascii=False)
         return dup_group, idx2group_idx
 
 class Dataset(D2TableDataset):

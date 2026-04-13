@@ -23,7 +23,10 @@
         "num_valid_tc"
     ],
     "duplicates_rule":{
-        "tc": "max_Tc",
+        "tc": {
+            "order": "highest",
+            "sort_by": "max_Tc"
+        },
         "criteria": "dataset",
         "merge_criteria":{
             "cityblock": 0.01,

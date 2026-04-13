@@ -1,7 +1,30 @@
 # Utils for HS dataset
 ***Repository for collaboration, not for public share***
 
+## To Do:
+* * ***all_Tc*** should be tested!
+    * config on TcMerger() from convert.utils, `self.rule['order']=="all_tcs":`
+    * default config: `src\hsdu\config\convert\compositional5_merge2maxTc_wholedataset.json`
+        ```json
+        "duplicates_rule":{"tc": {"order": "highest", "sort_by": "max_Tc"}}
+        ```
+
 ## Changes
+* (2026-04-10)
+    * ***unintended merging duplicates rule***: 
+        * with default config, `avg_Tc` and `min_Tc` was not re-derived from all the valid T_c but from the entry which had `max_Tc`.
+        * updated config file with , `src\hsdu\config\convert\compositional5_merge2maxTc_wholedataset.json`.
+            * previously, `"duplicates_rule":{"tc":"max_Tc"}`. it meant A. merge to highest T_c, B. on the `max_Tc` column.
+            * now it is separated.
+                ```json
+                "tc": {
+                    "order": "highest",
+                    "sort_by": "max_Tc"
+                }
+                ```
+        * codes updates upon these changes
+    * removed outdated config files, updated convert config json files.
+    * merge duplicates log now shows 
 * (2026-04-03) Refactored `tests/temp_new_group_algorithm.py` and other temporal codes in `tests/`
     * replaced old duplicate group method with new one
         - old: hsdu.data.Dataset().pymatgen_duplicates(rtol=0.02)

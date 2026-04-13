@@ -62,7 +62,7 @@ class TestGroupDuplicates(unittest.TestCase):
         for k, v in dupl_group.items():
             if len(v)>0:
                 existing_dupl_groups[k]=v
-                group_indices+=v
+                group_indices.append(k)
         missing_index=[]
         for i in range(len(xu_dataset)):
             if i not in group_indices:
