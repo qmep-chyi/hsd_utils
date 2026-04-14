@@ -13,7 +13,7 @@ from pathlib import Path
 
 from hsdu.dataset import Dataset, D2TableDataset
 from hsdu.convert.utils import Converter 
-from hsdu.convert.feature import  MultiSourceFeaturizer
+from hsdu.convert.feature import MultiSourceFeaturizer
 
 class Test(unittest.TestCase):
     """Test core class methods"""
