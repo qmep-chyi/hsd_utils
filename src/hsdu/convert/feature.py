@@ -34,7 +34,7 @@ from matminer.utils.data import AbstractData
 
 from hsdu.dataset import Dataset, D2TableDataset
 from hsdu.data.vendor.matminer.data import MagpieData
-from hsdu.utils.utils import config_parser, ConfigSingleSource, merge_dfs
+from hsdu.utils.utils import config_parser, ConfigSingleSource, merge_dfs, init_feature_config
 
 def __getattr__(name):
     if name == "Featurizer":
@@ -328,41 +328,9 @@ class MultiSourceFeaturizer():
     def __init__(self, config: dict | str | Path):
         self.config = config_parser(config, mode="featurize")
 
-        assert len(self.config["sources"])>0, self.config["sources"]
-        self.feature_count, self.col_names = self.init_feature_config(self.config)
+        assert len(self.config["featurizers"])>0, self.config["featurizers"]
+        self.feature_count, self.col_names, self.col_names_df = init_feature_config(self.config)
         # init config for 8/909 descriptors of Xu 2025
-    
-    def init_feature_config(self, config: dict):
-        # init matminer configs
-        num_features = 0
-        col_names = []
-        for source in config["sources"]:
-            if source in ("matminer", "matminer_expanded", "matminer_secondary"):
-                assert isinstance(config[source], list), f"config[source] should be a list of dictionaries but: {config[source]}"
-                for config_1source in config[source]:
-                    config_single_source = ConfigSingleSource(config_1source)
-                    num_features += len(config_single_source)
-                    for srcc, feat, stat in config_single_source.iter_config():
-                        #delete some parameters used when featurize. see `hsdu\config\feature\xu.json`
-                        col_name=f'{srcc}_{feat}_{stat.replace("::","_")}'
-                        col_name=col_name.replace("_self_prop::", "_")
-                        col_name=col_name.replace("_self_prop", "")
-                        col_names.append(col_name)
-            elif source == "materials_project":
-                raise NotImplementedError(source)
-            else:
-                raise ValueError(source)
-        return num_features, col_names
-        # if "xu_eight" in self.config["sources"]:
-        #     raise ValueError("xu_eight is merged with matminer_expanded")
-        #     self.xu_eight: bool = bool(self.config["xu_eight"])
-        #     self.feature_count["xu_eight"] = 8
-        # # init configs for materials project api
-        # if "materials_project" in self.config["sources"]:
-        #     raise NotImplementedError
-        # print(f"featurizer initialized; {self.feature_count}")
-        # return 
-
     def featurize_matminer(self,
                            featurized_df: pd.DataFrame,
                            config: dict,
@@ -426,7 +394,7 @@ class MultiSourceFeaturizer():
         comps=pd.Series(dataset.idx2aux['comps_pymatgen'])
         df = dataset._df
         featurized_df = pd.DataFrame(comps, columns=["comps_pymatgen"]).copy(deep=False)
-        for src in self.config["sources"]:
+        for src in self.config["featurizers"]:
             if src in ("matminer", "matminer_expanded"):
                 featurized_df = self.featurize_matminer(featurized_df, config=self.config[src], impute_nan=False)
             elif src=="matminer_secondary":

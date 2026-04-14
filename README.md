@@ -10,6 +10,19 @@
         ```
 
 ## Changes
+* (2026-04-14) updates utility attributes on `MultiSourceFeaturizer` from `hsdu.convert.feature`
+    * rename 'source' key of featurize config to 'featurizer'
+        * it decides featurize method on `MultiSourceFeaturizer().init_feature_config()` from `hsdu.convert.feature`
+        * valid values are: `["matminer", "matminer_expanded", "matminer_secondary"]`
+        * (common usage to load default config) `config_parser('xu',mode='featurize')` from `hsdu.utils.utils`
+    * `MultiSourceFeaturizer().col_names_df`
+        * refactored `MultiSourceFeaturizer().init_feature_config()`
+            * to `init_feature_config()` from `hsdu.utils.utils`
+            * now it returns (feature_count, col_names:list, col_names_df)
+        * `col_names_df` (pd.DataFrame):
+            * dataframe of which `columns=['col_name', 'feature','stat','weigthed', 'source', 'featurizer']`
+            * criteria from config json file, for later use.
+
 * (2026-04-10)
     * ***unintended merging duplicates rule***: 
         * with default config, `avg_Tc` and `min_Tc` was not re-derived from all the valid T_c but from the entry which had `max_Tc`.

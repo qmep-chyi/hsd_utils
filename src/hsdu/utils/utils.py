@@ -39,6 +39,49 @@ def config_parser(config: str | dict | Path, mode: Literal["dataset", "featurize
     assert isinstance(config, dict), f"config: {config}"
     return config
 
+def init_feature_config(config:dict):
+    features = []
+    statistics=[]
+    sources=[]
+    weigthed=[]
+    featurizers=[]
+    
+    num_features = 0
+    col_names = []
+    for featurizer in config["featurizers"]:
+        if featurizer in ("matminer", "matminer_expanded", "matminer_secondary"):
+            assert isinstance(config[featurizer], list), f"config[source] should be a list of dictionaries but: {config[featurizer]}"
+            for config_1source in config[featurizer]:
+                config_single_source = ConfigSingleSource(config_1source)
+                num_features += len(config_single_source)
+                for srcc, feat, stat in config_single_source.iter_config():
+                    #delete some parameters used when featurize. see `hsdu\config\feature\xu.json`
+                    col_name=f'{srcc}_{feat}_{stat.replace("::","_")}'
+                    col_name=col_name.replace("_self_prop::", "_")
+                    col_name=col_name.replace("_self_prop", "")
+                    col_names.append(col_name)
+                    features.append(feat)
+                if '::' in stat:
+                    parsed_stat = stat.split('::')
+                    assert len(parsed_stat)<=2
+                    if parsed_stat[0]=='self_prop':
+                        statistics.append(parsed_stat[1])
+                        weigthed.append(None)
+                    else:
+                        statistics.append(parsed_stat[0])
+                        weigthed.append(parsed_stat[1])
+                else:
+                    statistics.append(stat if stat!='self_prop' else None)
+                    weigthed.append(None)
+                sources.append(srcc)
+                featurizers.append(featurizer)
+        elif featurizer == "materials_project":
+            raise NotImplementedError(featurizer)
+        else:
+            raise ValueError(featurizer)
+    col_names_df = pd.DataFrame(zip(col_names, features, statistics, weigthed, sources, featurizers), columns=['col_name', 'feature','stat','weigthed', 'source', 'featurizer'])
+
+    return num_features, col_names, col_names_df
     
 def merge_dfs(src_df: pd.DataFrame, featurized_df: pd.DataFrame, reset_index=True):
     """

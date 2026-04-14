@@ -601,6 +601,12 @@ class D2TableDataset(BaseDataset):
                 for k, v in  self.duplicated_comps_group.items():
                     log_duplicates[k]={idx: str(self.onehot_codec.decode(onehot_fracs[idx])) for idx in v}
                     # add composition string for information
+                    if len(log_duplicates[k])==1 and len(log_duplicates[k][v[0]])==0:
+                        # it happens when composition is invalid
+                        if any(pd.isna(self.idx2aux['parsed_fracs'][v[0]])):
+                            log_duplicates[k]={v[0]: f"invalid composition(elements, fractions):({self.idx2aux['parsed_elements'][v[0]]},{self.idx2aux['parsed_fracs'][v[0]]})"}
+                        else:
+                            raise ValueError(self[v[0]], k)
                 json.dump(log_duplicates, f, indent=4, ensure_ascii=False)
         return dup_group, idx2group_idx
 
