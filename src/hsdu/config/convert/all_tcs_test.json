@@ -1,0 +1,43 @@
+{
+    "exceptions":{
+        "num_elements":{
+            "min":4,
+            "max":30,
+            "ignore_elements":["H", "He", "C", "N", "O", "F", "Ne"]
+        },
+        "tc":{
+            "non_sc_observed": true,
+            "max": 50.0,
+            "min": 0.0
+        }
+    },
+    "keep_cols_from_dataset": [
+        "hesc_id",
+        "elements",
+        "elements_fraction",
+        "doi",
+        "flags",
+        "xu_test_set"
+    ],
+    "drop_cols_after_merge_duplicates":[
+        "num_valid_tc"
+    ],
+    "duplicates_rule":{
+        "tc": {
+            "order": "all_tcs",
+            "sort_by": "max_Tc"
+        },
+        "criteria": "dataset",
+        "merge_criteria":{
+            "cityblock": 0.01,
+            "msre": 0.02,
+            "cross_elements_set": false
+        }
+    },
+    "dataset_config": "default.json",
+    "output_dir": "temp_devs/",
+    "save_compositional5_dir": "cleaned_table_all_tcs.csv",
+    "save_log_dir": "cleaned_table_all_tcs.log.json",
+    "keep_original_index_as": "hesc_id",
+    "keep_original_index_from": "hesc_id"
+}

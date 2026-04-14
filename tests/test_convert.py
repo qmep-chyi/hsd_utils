@@ -48,8 +48,27 @@ class Test(unittest.TestCase):
         #converter.save_compositional5_pth.unlink()
         #converter.save_log_pth.unlink()
         #Path("test_featurized_table.csv").unlink()
-        
+    def test_convert_all_tcs(self):
+        # featurize with `all_tc_test.json` config, where config['duplicates_rule']['tc']['order']=="all_tcs"
+        test_dataset_path: Path=None
+        with resources.as_file(resources.files("hsdu.data.tests") /"full_dataset.csv") as path:
+            test_dataset_path = path if Path(path).is_file() else None
 
-    
+        if test_dataset_path is None:
+            with resources.as_file(resources.files("hsdu.data.tests") /"test_dataset.csv") as path:
+                test_dataset_path = path
+
+        # generate cleaned datatable with comositional columns only
+        hsd = Dataset(test_dataset_path, exception_col='Exceptions')
+        converter = Converter(hsd, "all_tcs_test.json")
+        converter.convert(make_dir=True, exist_ok=True)
+        dataset = D2TableDataset(converter.save_compositional5_pth, exception_col=None)
+        dataset.idx2aux['comps_pymatgen']
+
+        featurizer=MultiSourceFeaturizer(config="xu.json")
+        featurized_df = featurizer.featurize_all(dataset, merge_both=True, save_file="test_featurized_table.csv")
+        print(featurized_df)
+
 if __name__ == '__main__':
+    Test('test_convert_all_tcs').debug()
     Test("test_convert").debug()

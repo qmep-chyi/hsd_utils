@@ -1,27 +1,28 @@
 # Utils for HS dataset
 ***Repository for collaboration, not for public share***
 
-## To Do:
-* * ***all_Tc*** should be tested!
-    * config on TcMerger() from convert.utils, `self.rule['order']=="all_tcs":`
-    * default config: `src\hsdu\config\convert\compositional5_merge2maxTc_wholedataset.json`
-        ```json
-        "duplicates_rule":{"tc": {"order": "highest", "sort_by": "max_Tc"}}
-        ```
-
 ## Changes
 * (2026-04-14) updates utility attributes on `MultiSourceFeaturizer` from `hsdu.convert.feature`
-    * rename 'source' key of featurize config to 'featurizer'
-        * it decides featurize method on `MultiSourceFeaturizer().init_feature_config()` from `hsdu.convert.feature`
+    * renamed 'source' key of featurize config to 'featurizer'
+        * it decides featurization method 
+            * in between `MultiSourceFeaturizer().featurize_matminer()` and `MultiSourceFeaturizer().featurize_matminer2nd()`
+            * on `MultiSourceFeaturizer().init_feature_config()` from `hsdu.convert.feature`
         * valid values are: `["matminer", "matminer_expanded", "matminer_secondary"]`
-        * (common usage to load default config) `config_parser('xu',mode='featurize')` from `hsdu.utils.utils`
+        * Example usage in repository: `config_parser('xu',mode='featurize')` from `hsdu.utils.utils`
     * `MultiSourceFeaturizer().col_names_df`
         * refactored `MultiSourceFeaturizer().init_feature_config()`
             * to `init_feature_config()` from `hsdu.utils.utils`
             * now it returns (feature_count, col_names:list, col_names_df)
         * `col_names_df` (pd.DataFrame):
-            * dataframe of which `columns=['col_name', 'feature','stat','weigthed', 'source', 'featurizer']`
-            * criteria from config json file, for later use.
+            * dataframe with `columns=['col_name', 'feature','stat','weigthed', 'source', 'featurizer']`
+            * criteria from config json file, for `feature selection` or `feature importance`
+    * new convert test (see `tests/test_conver.py`, `test_convert_all_tcs()`) with `hsdu\config\convert\all_tcs_test.json`
+        * in this case, it re-derives max, min, average over the whole valid tc values to be merged.
+        * config on TcMerger() from `hsdu.convert.utils`, `self.rule['order']=="all_tcs":`
+        * manually checked a case: `duplicated_comps[0]=[15, 277, 322, 323]`
+            * valid tcs: [7.12, 6.78, 7.45, 6.69, 6.42, 6.96, 8.43, 7.56, 7.2]
+            * but fraction of `10_277` was wrong (updated 'changes' on the shraed project drive)
+    * All tests passed. Tagged as 'v0.1.2'
 
 * (2026-04-10)
     * ***unintended merging duplicates rule***: 

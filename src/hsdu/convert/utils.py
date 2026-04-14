@@ -67,17 +67,22 @@ class TcMerger():
     def merge_all_tcs(self, five_col_rows:pd.DataFrame, targets: list[str]=["max_Tc", "min_Tc", "avg_Tc"])->dict:
         out={}
         for ta in targets:
-            if ta=="max_Tc":
-                max_tc = np.max([tc for tc in five_col_rows[:][ta] if not pd.isna(tc)])
-                out[ta]=max_tc
-            elif ta=="min_Tc":
-                min_tc = np.min([tc for tc in five_col_rows[:][ta] if not pd.isna(tc)])
-                out[ta]=min_tc
-            elif ta=="avg_Tc":
-                mean_tcs = [] # to calculate new mean, 
-                for j, row in five_col_rows.iterrows():
-                    mean_tcs=mean_tcs+[row["avg_Tc"]]*int(row["num_valid_tc"])
-                out[ta] = np.mean(mean_tcs)
+            valid_tcs = [tc for tc in five_col_rows[:][ta] if not pd.isna(tc)]
+            if len(valid_tcs)>0:
+                if ta=="max_Tc":
+                    max_tc = np.max([tc for tc in five_col_rows[:][ta] if not pd.isna(tc)])
+                    out[ta]=max_tc
+                elif ta=="min_Tc":
+                    min_tc = np.min([tc for tc in five_col_rows[:][ta] if not pd.isna(tc)])
+                    out[ta]=min_tc
+                elif ta=="avg_Tc":
+                    mean_tcs = [] # to calculate new mean, 
+                    for j, row in five_col_rows.iterrows():
+                        mean_tcs=mean_tcs+[row["avg_Tc"]]*int(row["num_valid_tc"])
+                    out[ta] = np.mean(mean_tcs)
+            else:
+                out={target:None for target in targets}
+                assert all(five_col_rows['num_valid_tc']==0)
         return out
 
     def merge_to_single_row(self, five_col_rows:pd.DataFrame, targets: list[str]=["max_Tc", "min_Tc", "avg_Tc"])->dict:
