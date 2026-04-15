@@ -1,5 +1,9 @@
 """package's optional test module for group duplicates
 
+        * representative results:
+            * elements set `Hf-Zr-Ti-Ta-Nb` with 43 entries, largest duplicates group is group2: 11 entries with elemental set: Hf-Zr-Ti-Ta-Nb
+            * last output: among 45 entries of XuTestHEA(), no duplicates in HE-SC dataset:[7, 20, 34, 40]
+
 main features:
     * group close compositions
 
@@ -7,20 +11,14 @@ main features:
     
 """
 
-import importlib.resources as resources
 import unittest
-from pathlib import Path
+import warnings
 
-import numpy as np
 import pandas as pd
-from typing import Literal
-from scipy.spatial.distance import cdist
-from pymatgen.core import Composition
 
-from hsdu.dataset import Dataset, D2TableDataset
-from hsdu.utils.conversion_utils import almost_equals_pymatgen_atomic_fraction, element_list_iupac_ordered
-from hsdu.utils.duplicate import make_duplicates_group, distance_matrix, compare_dupl_groups, compare_dupl_groups_old2new, dist4groups_matrix
-from hsdu.comparison import XuTestHEA, StanevSuperCon
+from hsdu.dataset import Dataset
+from hsdu.comparison import XuTestHEA
+from .utils_for_test import ConsistentResultsError, get_package_dataset
 
 
 class TestGroupDuplicates(unittest.TestCase):
@@ -29,18 +27,20 @@ class TestGroupDuplicates(unittest.TestCase):
     def test_group_duplicates(self):
         """test duplicated entries(have too close compositions)
         """
-        test_dataset_path: Path=None
-        with resources.as_file(resources.files("hsdu.data.tests") /"full_dataset.csv") as path:
-            test_dataset_path = path if Path(path).is_file() else None
-
-        if test_dataset_path is None:
-            with resources.as_file(resources.files("hsdu.data.tests") /"test_dataset.csv") as path:
-                test_dataset_path = path
+        with get_package_dataset() as path:
+            test_dataset_path = path
         hsd = Dataset(test_dataset_path, config="default.json")
 
         assert hsd._df.index.tolist()==list(range(len(hsd)))
         elements_sets = [hsd[i]['elements_set'] for i in hsd._df.index]
-        print(pd.Series(elements_sets).value_counts())
+        
+        print("count of elements_sets:")
+        count_of_elements_sets = pd.Series(elements_sets).value_counts()
+        print(count_of_elements_sets)
+        if not count_of_elements_sets[0]==43: 
+            warnings.warn(count_of_elements_sets, ConsistentResultsError)
+        if not count_of_elements_sets.index[0]=='Hf-Zr-Ti-Ta-Nb':
+            warnings.warn(count_of_elements_sets.index[0], ConsistentResultsError)
 
         # internal duplicates
         dup_group, idx2group = hsd.group_duplicates(cityblock=0.01, msre=0.02)
@@ -51,6 +51,8 @@ class TestGroupDuplicates(unittest.TestCase):
         elemental_sets_of_largest_groups = [elements_sets[list(dup_group[i])[0]] for i in largest_groups.index]
         for (group_idx, count), elem_set in zip(largest_groups.items(), elemental_sets_of_largest_groups):
             print(f'group {group_idx}: {count} entries with elemental set:{elem_set}')
+        if not largest_groups.index[0]==2 or not elemental_sets_of_largest_groups[0]=='Hf-Zr-Ti-Ta-Nb':
+            warnings.warn((largest_groups.index[0], elemental_sets_of_largest_groups[0]), ConsistentResultsError)
 
         # to other datatable
         xu_dataset = XuTestHEA()
@@ -69,6 +71,6 @@ class TestGroupDuplicates(unittest.TestCase):
                 missing_index.append(i)
         print(f'among {len(xu_dataset)} entries of XuTestHEA(), no duplicates in HE-SC dataset:{missing_index}')
 
-if __name__=="__main__":
+#if __name__=="__main__":
     #unittest.main()
-    TestGroupDuplicates("test_group_duplicates").debug()
+    #TestGroupDuplicates("test_group_duplicates").debug()

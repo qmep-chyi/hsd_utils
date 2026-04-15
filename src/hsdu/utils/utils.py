@@ -55,7 +55,7 @@ def init_feature_config(config:dict):
                 config_single_source = ConfigSingleSource(config_1source)
                 num_features += len(config_single_source)
                 for srcc, feat, stat in config_single_source.iter_config():
-                    #delete some parameters used when featurize. see `hsdu\config\feature\xu.json`
+                    #delete some parameters used when featurize. see `hsdu\config\feature\comp450.json`
                     col_name=f'{srcc}_{feat}_{stat.replace("::","_")}'
                     col_name=col_name.replace("_self_prop::", "_")
                     col_name=col_name.replace("_self_prop", "")

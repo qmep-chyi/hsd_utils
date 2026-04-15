@@ -151,16 +151,16 @@ class InhouseSecondary(AbstractData):
         self.first_properties=["NsValence", "NpValence", "NdValence", "NfValence", "NValence", "Electronegativity"]
         with resources.as_file(resources.files("matminer.utils")) as path:
             magpie_data = MagpieData(data_dir=path.joinpath("data_files", "magpie_elementdata"), impute_nan=impute_nan, features=self.first_properties)
-        self.xu_eights_init(magpie_data=magpie_data)
+        self.eight_high_entropy_dedicated_init(magpie_data=magpie_data)
 
-    def xu_eights_init(self, magpie_data: MagpieData):
+    def eight_high_entropy_dedicated_init(self, magpie_data: MagpieData):
         self.configurational_entropy_init()
         self.occu_ve_init(magpie_data=magpie_data)
         self.ionicity_init(magpie_data=magpie_data)
         for config_1source in self.config_per_sources:
             for names in config_1source.iter_config():
                 col_name="_".join(names)
-                #delete some parameters used when featurize. see `hsdu\config\feature\xu.json`
+                #delete some parameters used when featurize. see `hsdu\config\feature\comp450.json`
                 col_name.replace("_self_prop::", "_")
                 col_name.replace("_self_prop", "")
                 self.available_props.append(col_name)
@@ -318,19 +318,18 @@ class MultiSourceFeaturizer():
                     * [MAST-ML](https://github.com/uw-cmg/MAST-ML) tables
                     * including BCCfremi, the main descriptor of Xu 2025
                         
-                * xu_eight: bool. 8/909 features of Xu et al (2025)
+                * eight_high_entropy_dedicated_init: bool. 8/909 features of Xu et al (2025)
                 * (NotImplemented) materials_project: 
                     elemental properties from materials project api
 
     config preset:
-        * `xu.json`: reproducing xu et al 2025 except for many elemental properties on Table 1
+        * `comp450.json`: reproducing xu et al 2025 except for many elemental properties on Table 1
     """
     def __init__(self, config: dict | str | Path):
         self.config = config_parser(config, mode="featurize")
 
         assert len(self.config["featurizers"])>0, self.config["featurizers"]
         self.feature_count, self.col_names, self.col_names_df = init_feature_config(self.config)
-        # init config for 8/909 descriptors of Xu 2025
     def featurize_matminer(self,
                            featurized_df: pd.DataFrame,
                            config: dict,

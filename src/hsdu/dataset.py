@@ -8,7 +8,7 @@ from pathlib import Path
 from abc import ABC, abstractmethod
 import importlib.resources as resources
 import string
-from typing import Optional, cast, Any, Literal
+from typing import Optional, Literal
 from collections.abc import Sequence
 
 import pandas as pd
@@ -19,7 +19,7 @@ from pymatgen.core.periodic_table import Element
 from hsdu.parsers import CellParser, FracParser, ElemParser
 from hsdu.utils.utils import config_parser
 from hsdu.utils.conversion_utils import almost_equals_pymatgen_atomic_fraction, norm_fracs, OneHotFracCodec, element_list_iupac_ordered
-from hsdu.utils.duplicate import make_duplicates_group, distance_matrix, compare_dupl_groups, compare_dupl_groups_old2new, dist4groups_matrix
+from hsdu.utils.duplicate import make_duplicates_group, distance_matrix
 
 class ElementsSymbolColWarning(UserWarning):
     """column name is a symbol of element"""
@@ -166,49 +166,7 @@ class BaseDataset(ABC, Sequence):
         other_df:Optional[pd.dataframe]=None
         """
         raise DeprecationWarning("use make_duplicates_group from hsdu.utils.duplicate")
-        #warnings.warn("use make_duplicates_group from hsdu.utils.duplicate", DeprecationWarning)
-
-        self.duplicated_comps_group={}
-        self.duplicated_comps=set()
-
-        assert other_df is None or isinstance(other_df, pd.DataFrame), NotADirectoryError
-
-        if other_df is None:
-            df1=self._df
-            other_comps = self.idx2aux['comps_pymatgen'].copy()
-        else:
-            #assert type(self).__name__=='XuTestHEA', "compare with other_df is implemented only for XuTestHEA"
-            df1=other_df
-        for idx0, row0 in self._df.iterrows():
-            if idx0 not in self.duplicated_comps:
-                duplicated_row={}
-                idx1_start = 0 if other_df is not None else idx0 # when compare self, (i,j)==(j,i)
-                row0_compare=cast(Composition, self.idx2aux['comps_pymatgen'][idx0])
-
-                for idx1, row1 in df1[idx1_start:].iterrows():
-                    if almost_equals_pymatgen_atomic_fraction(other_comps[idx1], row0_compare, rtol=rtol):
-                        duplicated_row[idx1]=other_comps[idx1]
-
-                minimum_length = 2 if other_df is None else 1 #when self compare, it includes self.
-                if len(duplicated_row)>=minimum_length:
-                    duplicated_formulas={k:v.formula for k, v in duplicated_row.items()}
-                    print(f"idx0, duplicates: {idx0}, {duplicated_formulas}")
-                    self.duplicated_comps_group[idx0]={
-                        k: str(v) for k, v in duplicated_row.items()
-                        }
-                    if other_df is None:
-                        # when other_df, `idx0 not in self.duplicated_comps` should be false always
-                        self.duplicated_comps.update(list(duplicated_row.keys()))
-                    else:
-                        # 
-                        self.duplicated_comps_group[idx0][f"self_{idx0}"]=str(self.idx2aux['comps_pymatgen'][idx0])
-                        if exception_map is not None:
-                            if idx0 in exception_map:
-                                self.duplicated_comps_group[idx0][f"replace_to_nominal_comp_idx0918({exception_map[idx0]})"]=str(row0_compare)
-
-        if save_dir is not None:
-            with open(save_dir, 'w', encoding="utf-8") as f:
-                json.dump(self.duplicated_comps_group, f, indent=4, ensure_ascii=False)
+        pass
     
     def validate_by_composition(self, rtol:float=0.001, 
                                 composition_col="composition"):
@@ -596,19 +554,23 @@ class D2TableDataset(BaseDataset):
 
         if save_dir is not None:
             with open(save_dir, 'w', encoding="utf-8") as f:
-                log_duplicates = dict()
-                onehot_fracs = self.onehot_fracs()
-                for k, v in  self.duplicated_comps_group.items():
-                    log_duplicates[k]={idx: str(self.onehot_codec.decode(onehot_fracs[idx])) for idx in v}
-                    # add composition string for information
-                    if len(log_duplicates[k])==1 and len(log_duplicates[k][v[0]])==0:
-                        # it happens when composition is invalid
-                        if any(pd.isna(self.idx2aux['parsed_fracs'][v[0]])):
-                            log_duplicates[k]={v[0]: f"invalid composition(elements, fractions):({self.idx2aux['parsed_elements'][v[0]]},{self.idx2aux['parsed_fracs'][v[0]]})"}
-                        else:
-                            raise ValueError(self[v[0]], k)
+                log_duplicates = self.log_with_composition()
                 json.dump(log_duplicates, f, indent=4, ensure_ascii=False)
         return dup_group, idx2group_idx
+
+    def log_with_composition(self):
+        log_with_comps = dict()
+        onehot_fracs = self.onehot_fracs()
+        for k, v in  self.duplicated_comps_group.items():
+            log_with_comps[k]={idx: str(self.onehot_codec.decode(onehot_fracs[idx])) for idx in v}
+            # add composition string for information
+            if len(log_with_comps[k])==1 and len(log_with_comps[k][v[0]])==0:
+                # it happens when composition is invalid
+                if any(pd.isna(self.idx2aux['parsed_fracs'][v[0]])):
+                    log_with_comps[k]={v[0]: f"invalid composition(elements, fractions):({self.idx2aux['parsed_elements'][v[0]]},{self.idx2aux['parsed_fracs'][v[0]]})"}
+                else:
+                    raise ValueError(self[v[0]], k)
+        return log_with_comps
 
 class Dataset(D2TableDataset):
     """

@@ -174,11 +174,10 @@ cython_debug/
 .vscode/
 
 # private data
-src/draftsh/data/inhouse_dataset_merged_0810.xlsx
 src/hsdu/data/miscs/xu2025_test_HEAs_private.csv
-src/draftsh/data/*.xlsx
-src/draftsh/data/*.csv
+src/hsdu/data/*.csv
 temp_devs/
 ./*.csv
 duplicates_group.json
-src/hsdu/data/tests/full_dataset.csv
+src/hsdu/data/full_dataset*.csv
+**/test_featurized_table.csv

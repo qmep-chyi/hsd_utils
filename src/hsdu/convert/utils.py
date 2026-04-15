@@ -119,19 +119,10 @@ class TcMerger():
             self.re_init(idx)
         return idx_to_drop, df
             
-
 class Converter():
+    """ Convert datatables
     """
-    Parameters
-
-    - validate_by_comps: bool
-        warn (do not modify dataframe), if
-            `composition` strings and parsed columns 
-            (`elements` and `elements_fractions`) are not matched.
-            composition string is parsed by `Composition` from pymatgen.core.composition.
-    """
-    def __init__(self, data, convert_config, test:bool = False, output_dir:str|None=None, validate_by_comps:bool=True,
-                 skip_init_duplicate_group=False) -> None:
+    def __init__(self, data, convert_config, test:bool=False, output_dir:str|None=None, validate_by_comps:bool=True, skip_init_duplicate_group=False):
         self.config = config_parser(config=convert_config, mode="convert")
         if self.config.get("output_dir") is not None and output_dir is not None:
             raise NameError("two `output_dir` from config file and args")
@@ -147,6 +138,21 @@ class Converter():
             "convert_config":convert_config,
             "test":test}
         self.log["config"]=self.config.copy()
+
+
+class Preprocessor(Converter):
+    """ Preprecess and clean Raw HE-SC dataset
+    
+    Arguments:
+    - validate_by_comps: bool
+        warn (do not modify dataframe), if
+            `composition` strings and parsed columns 
+            (`elements` and `elements_fractions`) are not matched.
+            composition string is parsed by `Composition` from pymatgen.core.composition.
+    """
+    def __init__(self, data, convert_config, test:bool = False, output_dir:str|None=None, validate_by_comps:bool=True,
+                 skip_init_duplicate_group=False) -> None:
+        super().__init__(self, data, convert_config, test, output_dir, validate_by_comps, skip_init_duplicate_group)
         if isinstance(data, (str, Path)):
             self.dataset = Dataset(data, self.config['dataset_config'])
         else:
@@ -165,10 +171,9 @@ class Converter():
         else:
             raise ValueError(self.config.get('duplicates_rule'))
         if self.config.get("duplicates_rule") is not None:
-            self.log["duplicated_comps"]=self.dataset.duplicated_comps_group
+            self.log["duplicated_comps"]=self.dataset.log_with_composition()
         self.test = test
         self.converted_df: pd.DataFrame
-
 
     def convert(self, make_dir=False, exist_ok=False, simple_target=False):
         out_df=self.convert_tables(self.dataset, simple_target=simple_target)
@@ -272,7 +277,6 @@ class Converter():
         out_df = out_df.drop(idx_to_drop)
         return out_df
             
-
     def exclude_exceptions(self, config, out_df):
         """
         drop rows with invalid values
@@ -325,9 +329,9 @@ if __name__ == "__main__":
         parser.add_argument('-t', '--test', action='store_true', default=False)
         args=parser.parse_args()
         
-        converter = Converter(args.dataset, args.convert_config, args.test)
+        converter = Preprocessor(args.dataset, args.convert_config, args.test)
         converter.convert()
     else:
-        converter = Converter(r"C:\Users\chyi\hsdu2025\temp_devs\merged_dataset_forward.csv", "compositional5.json")
+        converter = Preprocessor(r"C:\Users\chyi\hsdu2025\temp_devs\merged_dataset_forward.csv", "compositional5.json")
         converter.convert()
 # `python conversion.py path\to\merged_dataset_forward.xlsx compositional5_all_tc.json `

@@ -8,7 +8,6 @@ Todo:
 References
     - Xu, S. Predicting superconducting temperatures with new hierarchical neural network AI model. Front. Phys. 20, 14205 (2025).
 """
-#%%
 import importlib.resources as resources
 import warnings
 from typing import Optional
@@ -17,7 +16,6 @@ import pandas as pd
 from pymatgen.core.composition import Composition
 
 from hsdu.dataset import D2TableDataset, Dataset
-from hsdu.utils.utils import config_parser
 
 class ExternalDataWarning(UserWarning):
     pass
@@ -28,7 +26,7 @@ class XuTestHEA(D2TableDataset):
     see Supplementary Table S1
     """
     def __init__(self):
-        warnings.warn(r"This data is not covered by the license of this repository but Xu et al., Predicting superconducting temperatures with new hierarchical neural network AI model. Front. Phys. 20, 14205 (2025) DOI:10.15302/frontphys.2025.014205", ExternalDataWarning)
+        warnings.warn(r"This data is not covered by the license of this repository but by Xu et al., Predicting superconducting temperatures with new hierarchical neural network AI model. Front. Phys. 20, 14205 (2025) DOI:10.15302/frontphys.2025.014205", ExternalDataWarning)
         with resources.as_file(resources.files("hsdu.data.miscs") /"xu2025_test_HEAs.csv") as path:
             csv_path = path
 
@@ -41,7 +39,7 @@ class StanevSuperCon(D2TableDataset):
     * Preprocessed SuperCon table from Stanev et al. (2018)
 
     preprocess:
-        * see `src\hsdu\data\miscs\preprocess_supercon.py`
+        * see `src.hsdudata.miscs.preprocess_supercon`
         * note that treshold_max_tc is hard coded, because it is close to the 5213 entries of xu et al
     """
     def __init__(self, drop_cols = None, exception_col = None,
