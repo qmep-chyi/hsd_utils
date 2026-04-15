@@ -61,20 +61,20 @@ def init_feature_config(config:dict):
                     col_name=col_name.replace("_self_prop", "")
                     col_names.append(col_name)
                     features.append(feat)
-                if '::' in stat:
-                    parsed_stat = stat.split('::')
-                    assert len(parsed_stat)<=2
-                    if parsed_stat[0]=='self_prop':
-                        statistics.append(parsed_stat[1])
-                        weigthed.append(None)
+                    if '::' in stat:
+                        parsed_stat = stat.split('::')
+                        assert len(parsed_stat)<=2
+                        if parsed_stat[0]=='self_prop':
+                            statistics.append(parsed_stat[1])
+                            weigthed.append(None)
+                        else:
+                            statistics.append(parsed_stat[0])
+                            weigthed.append(parsed_stat[1])
                     else:
-                        statistics.append(parsed_stat[0])
-                        weigthed.append(parsed_stat[1])
-                else:
-                    statistics.append(stat if stat!='self_prop' else None)
-                    weigthed.append(None)
-                sources.append(srcc)
-                featurizers.append(featurizer)
+                        statistics.append(stat if stat!='self_prop' else None)
+                        weigthed.append(None)
+                    sources.append(srcc)
+                    featurizers.append(featurizer)
         elif featurizer == "materials_project":
             raise NotImplementedError(featurizer)
         else:
