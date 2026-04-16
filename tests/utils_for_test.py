@@ -1,9 +1,12 @@
 import importlib.resources as resources
 
-class ConsistentResultsError(ValueError):
+class TestSnapshotWarning(UserWarning):
     """
-    compare with v0.1.3 (2026-04-15) results.
-    if outdated, update.
+    compare with v0.1.3 (2026-04-15) results, with HE-SC 
+    if outdated, 
+        * make sure it is working as expected
+        * and update hard coded result values (go to references of this class)
+    #TODO: let's implement snapshot, import some pacakge like `pytest-snapshot`
     """
     pass
 

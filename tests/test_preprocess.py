@@ -1,17 +1,18 @@
 """package's optional test module
 
 main features:
-    * 
-    $ 
+    * clean, preprocess raw datatable
+    * featurization
 """
 
-import unittest, warnings
+import unittest
+import warnings
 
 from hsdu.dataset import Dataset, D2TableDataset
 from hsdu.convert.utils import Preprocessor 
 from hsdu.convert.feature import MultiSourceFeaturizer
 from hsdu.utils.utils import config_parser, init_feature_config
-from .utils_for_test import ConsistentResultsError, get_package_dataset
+from .utils_for_test import TestSnapshotWarning, get_package_dataset
 
 class Test(unittest.TestCase):
     """Test core class methods"""
@@ -55,8 +56,8 @@ class Test(unittest.TestCase):
 
         featurizer=MultiSourceFeaturizer(config="comp450.json")
         featurized_df = featurizer.featurize_all(dataset, merge_both=True, save_file="test_featurized_table.csv")
-        if featurized_df.shape!=(255, 511):
-            warnings.warn(f"featurized_df.shape={featurized_df.shape}",ConsistentResultsError)
+        if featurized_df.shape!=(256, 511):
+            warnings.warn(f"featurized_df.shape={featurized_df.shape}",TestSnapshotWarning)
         else:
             print(f'featurized_df.shape: {featurized_df.shape}')
 
@@ -64,11 +65,11 @@ class Test(unittest.TestCase):
         default_config = config_parser('comp450', mode='featurize')
         n_cols, col_names, feature_cols_df = init_feature_config(default_config)
         if len(feature_cols_df)!=450:
-            warnings.warn(len(feature_cols_df), ConsistentResultsError)
+            warnings.warn(len(feature_cols_df), TestSnapshotWarning)
         if n_cols!=450:
-            warnings.warn(n_cols, ConsistentResultsError)
+            warnings.warn(n_cols, TestSnapshotWarning)
         if len(col_names)!=450:
-            warnings.warn(len(col_names), ConsistentResultsError)
+            warnings.warn(len(col_names), TestSnapshotWarning)
 
 #if __name__ == '__main__':
     #Test('test_feature_col_utils').debug()

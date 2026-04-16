@@ -37,12 +37,10 @@ devloped environment: windows 11, python==3.13, uv==0.9.24
 * to use featurizer/converter, `uv sync --dev --extra convert` 
     * As [`matminer` may not support python>3.13](https://github.com/hackingmaterials/matminer/blob/main/pyproject.toml) and many latest envs.
 * (recommended) test (change directory to `tests/`)
-    * `uv run python -m unittest test`
-    * `uv run python -m unittest test_convert`
-        * outputs on v0.1.3 (2026-04-15), with full dataset
-    * `uv run python -m unittest test_group_duplicates`
-    * if required, put full dataset as `hsd_utils/src/hsdu/data/tests/full_dataset.csv`
-
+    * put full dataset at `hsd_utils/src/hsdu/data/dataset_*.csv`
+        * for example, `dataset_20260415.csv`)
+    * `uv run pytest --import-mode=importlib -s`
+        * `-s` to see some print() outputs (optional)
 
 ### Google colab(linux) and pip
 ***To be tested.(leave versions python and major package when test)***
@@ -50,7 +48,11 @@ devloped environment: windows 11, python==3.13, uv==0.9.24
 * `!pip install -e hsd_utils/` ***should success***
     * may  not install `convert` group.
 
-
 ## Usage
-* Temporally, please see tests
-    * tests/test.py
+* Temporally, please see `tests/`
+    * `test.py`: load dataset, load external dataset for comparison
+    * `test_preprocess.py`: 
+        * convert raw dataset to preprocessed compositional dataset.
+        * featurization from the preprocessed compositional dataset
+    * `test_group_duplicates.py`:
+        * group similar compositions

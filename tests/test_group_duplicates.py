@@ -18,7 +18,7 @@ import pandas as pd
 
 from hsdu.dataset import Dataset
 from hsdu.comparison import XuTestHEA
-from .utils_for_test import ConsistentResultsError, get_package_dataset
+from .utils_for_test import TestSnapshotWarning, get_package_dataset
 
 
 class TestGroupDuplicates(unittest.TestCase):
@@ -38,9 +38,9 @@ class TestGroupDuplicates(unittest.TestCase):
         count_of_elements_sets = pd.Series(elements_sets).value_counts()
         print(count_of_elements_sets)
         if not count_of_elements_sets[0]==43: 
-            warnings.warn(count_of_elements_sets, ConsistentResultsError)
+            warnings.warn(count_of_elements_sets, TestSnapshotWarning)
         if not count_of_elements_sets.index[0]=='Hf-Zr-Ti-Ta-Nb':
-            warnings.warn(count_of_elements_sets.index[0], ConsistentResultsError)
+            warnings.warn(count_of_elements_sets.index[0], TestSnapshotWarning)
 
         # internal duplicates
         dup_group, idx2group = hsd.group_duplicates(cityblock=0.01, msre=0.02)
@@ -52,7 +52,7 @@ class TestGroupDuplicates(unittest.TestCase):
         for (group_idx, count), elem_set in zip(largest_groups.items(), elemental_sets_of_largest_groups):
             print(f'group {group_idx}: {count} entries with elemental set:{elem_set}')
         if not largest_groups.index[0]==2 or not elemental_sets_of_largest_groups[0]=='Hf-Zr-Ti-Ta-Nb':
-            warnings.warn((largest_groups.index[0], elemental_sets_of_largest_groups[0]), ConsistentResultsError)
+            warnings.warn((largest_groups.index[0], elemental_sets_of_largest_groups[0]), TestSnapshotWarning)
 
         # to other datatable
         xu_dataset = XuTestHEA()

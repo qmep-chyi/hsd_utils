@@ -152,7 +152,7 @@ class Preprocessor(Converter):
     """
     def __init__(self, data, convert_config, test:bool = False, output_dir:str|None=None, validate_by_comps:bool=True,
                  skip_init_duplicate_group=False) -> None:
-        super().__init__(self, data, convert_config, test, output_dir, validate_by_comps, skip_init_duplicate_group)
+        super().__init__(data, convert_config, test, output_dir, validate_by_comps, skip_init_duplicate_group)
         if isinstance(data, (str, Path)):
             self.dataset = Dataset(data, self.config['dataset_config'])
         else:

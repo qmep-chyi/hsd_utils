@@ -15,7 +15,7 @@ import warnings
 
 from hsdu.dataset import Dataset, D2TableDataset
 from hsdu.comparison import XuTestHEA, StanevSuperCon
-from .utils_for_test import ConsistentResultsError, get_package_dataset
+from .utils_for_test import TestSnapshotWarning, get_package_dataset
 
 
 class TestDataset(unittest.TestCase):
@@ -32,7 +32,7 @@ class TestDataset(unittest.TestCase):
         # load dataset
         dataset = Dataset(test_dataset_path, config="default.json")
         if dataset._df.shape!=(432, 105):
-            warnings.warn(f"ss_dataset._df.shape={dataset._df.shape}",ConsistentResultsError)
+            warnings.warn(f"ss_dataset._df.shape={dataset._df.shape}",TestSnapshotWarning)
         else:
             print(f'dataset._df.shape: {dataset._df.shape}')
     def test_comparison(self):
@@ -42,13 +42,13 @@ class TestDataset(unittest.TestCase):
         #print(f"First entry of supercon(stanev version): {ss_dataset[0]}")
         
         if ss_dataset._df.shape!=(6194, 86):
-            warnings.warn(f"ss_dataset._df.shape={ss_dataset._df.shape}",ConsistentResultsError)
+            warnings.warn(f"ss_dataset._df.shape={ss_dataset._df.shape}",TestSnapshotWarning)
         else:
             print(f'ss_dataset._df.shape: {ss_dataset._df.shape}')
 
         xu_test45 = XuTestHEA()
         if xu_test45._df.shape!=(45, 26):
-            warnings.warn(f"xu_test45._df.shape={xu_test45._df.shape}",ConsistentResultsError)
+            warnings.warn(f"xu_test45._df.shape={xu_test45._df.shape}",TestSnapshotWarning)
         else:
             print(f'xu_test45._df.shape: {xu_test45._df.shape}')
         #print(f"First entry of xu2025_test_hea: {xu_test45[0]}")
