@@ -253,8 +253,10 @@ def group_duplicates_loop(index0, index1, dupl_groups, idx2gid, dist_cutoffs, di
                 if mode=='other':
                     dupl_groups[index1[j]]=dupl_groups.get(index1[j], [])
                     dupl_groups[index1[j]].append(index0[i])
-                    assert idx2gid.get(index1[j]) is None
-                    idx2gid[index0[i]]=index1[j] # TODO: maybe I would store multiple values to optimize merge_overlap()
+                    if idx2gid.get(index0[i]) is None:
+                        idx2gid[index0[i]]=index1[j] # TODO: maybe I would store multiple values to optimize merge_overlap()
+                    else:
+                        raise ValueError
                 elif mode=='itself':
                     if j<=i: # just double check
                         assert index0[i] in dupl_groups[idx2gid[index1[j]]]

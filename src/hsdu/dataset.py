@@ -474,11 +474,11 @@ class D2TableDataset(BaseDataset):
         cell_parser = FracParser()
         return self.parse_col(colname, cell_parser, False)
 
-    def group_duplicates(self, other:BaseDataset=None, cityblock=float|None, msre=float|None, chebyshev:float|None=None, cross_elements_set:bool=False, save_dir:str|Path|None=None, update_attrs:bool=True, verbose:bool=False):
+    def group_duplicates(self, other:BaseDataset=None, cityblock=float|None, msre=float|None, chebyshev:float|None=None, cross_elements_set:bool=False, save_dir:str|Path|None=None, update_attrs:bool=True, verbose:bool=False)->tuple[dict, dict]:
         """ group close enough compositions
 
-        return: dup_group, idx2group_idx
-            * dup_group: {group_index: indices of groupped entries}
+        return: tuple[dict, dict]=(dup_group, idx2group_idx)
+            * dup_group: {group_index: list of indices of grouped entries}
             * idx2group_idx: {index: group_index}
         """
         if not cross_elements_set:
@@ -548,6 +548,7 @@ class D2TableDataset(BaseDataset):
                                                                         mode=mode, verbose=verbose)
             else:
                 assert mode=='other'
+                assert len(inset_idx1)==0
         if update_attrs:
             self.duplicated_comps_group = {k:list(v) for k, v in dup_group.items()}
             self.idx2aux['duplicate_group'] = idx2group_idx
@@ -599,11 +600,17 @@ class Dataset(D2TableDataset):
         self.idx_by_hesc_id={v:k for k, v in self._df['hesc_id'].items()}
     
     def get_idx_by_hesc_id(self, hesc_id:int):
-        return self.idx_by_hesc_id.get(hesc_id)
+        if isinstance(hesc_id, int):
+            return self.idx_by_hesc_id.get(int(hesc_id))
+        else:
+            raise TypeError
     
     def get_by_hesc_id(self, hesc_id:int):
-        return self[self.get_idx_by_hesc_id(hesc_id)]
-
+        if isinstance(hesc_id, int):
+            return self[self.get_idx_by_hesc_id(hesc_id)]
+        else:
+            raise TypeError
+        
     def validate_elem_frac_length(self):
         raise DeprecationWarning
         assert self._df.apply(

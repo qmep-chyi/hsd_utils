@@ -1,8 +1,14 @@
 # Utils for HS dataset
 ***Repository for collaboration, not for public share***
+## To Do
+* after v0.1.3
+    * refactor `tests\temp_test_update_xutesthea.py` as a test
+    * refactor terms like `compositional5`
+    * implement tag column parser
+    * update codes to get misc csv file paths from hsdu.comparison, like `test/utils_for_test.py`
 
 ## Recent Changes
-* `v0.1.3` (2026-04-15) 
+* `v0.1.3` (2026-04-15..) 
     * fixed wrong indentation
     * removed outdated things
     * changed some names including 'xu` as they are not exactly reproducing what Xu et al. (2025) did

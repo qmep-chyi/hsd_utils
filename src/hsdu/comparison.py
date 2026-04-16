@@ -25,10 +25,11 @@ class XuTestHEA(D2TableDataset):
     
     see Supplementary Table S1
     """
-    def __init__(self):
+    def __init__(self, csv_path=None):
         warnings.warn(r"This data is not covered by the license of this repository but by Xu et al., Predicting superconducting temperatures with new hierarchical neural network AI model. Front. Phys. 20, 14205 (2025) DOI:10.15302/frontphys.2025.014205", ExternalDataWarning)
-        with resources.as_file(resources.files("hsdu.data.miscs") /"xu2025_test_HEAs.csv") as path:
-            csv_path = path
+        if csv_path is None:
+            with resources.as_file(resources.files("hsdu.data.miscs") /"xu2025_test_HEAs.csv") as path:
+                csv_path = path
 
         super().__init__(dset_path=csv_path, exception_col=None,
                         parse_pymatgen_comps_col='formula', index_col="xu_index")
