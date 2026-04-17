@@ -150,7 +150,7 @@ class Preprocessor(Converter):
             (`elements` and `elements_fractions`) are not matched.
             composition string is parsed by `Composition` from pymatgen.core.composition.
     """
-    def __init__(self, data, convert_config, test:bool = False, output_dir:str|None=None, validate_by_comps:bool=True,
+    def __init__(self, data, convert_config, test:bool = False, output_dir:str|None=None, validate_by_comps:bool=False,
                  skip_init_duplicate_group=False) -> None:
         super().__init__(data, convert_config, test, output_dir, validate_by_comps, skip_init_duplicate_group)
         if isinstance(data, (str, Path)):
@@ -166,7 +166,7 @@ class Preprocessor(Converter):
             pass
         elif self.config.get("duplicates_rule") is not None:
             dist_cutoffs = dict(**self.config['duplicates_rule'].get('merge_criteria'))
-            self.dataset.group_duplicates(**dist_cutoffs, save_dir='group_dulicates_log.json')
+            self.dataset.group_duplicates(**dist_cutoffs, save_dir='group_duplicates_log.json')
             self.dataset.add_duplicated_comps_column(criteria_rule=self.config['duplicates_rule'].get("criteria"))
         else:
             raise ValueError(self.config.get('duplicates_rule'))

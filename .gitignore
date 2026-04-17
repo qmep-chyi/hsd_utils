@@ -181,4 +181,4 @@ temp_devs/
 duplicates_group.json
 src/hsdu/data/full_dataset*.csv
 **/test_featurized_table.csv
-**/group_duplicates_log*.json
+**/group_duplicates_log.json

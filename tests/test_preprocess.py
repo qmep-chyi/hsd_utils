@@ -55,7 +55,7 @@ class Test(unittest.TestCase):
         dataset.idx2aux['comps_pymatgen']
 
         featurizer=MultiSourceFeaturizer(config="comp450.json")
-        featurized_df = featurizer.featurize_all(dataset, merge_both=True, save_file="test_featurized_table.csv")
+        featurized_df = featurizer.featurize_all(dataset, merge_both=True, save_file="test_featurized_table_all_tcs.csv")
         if featurized_df.shape!=(256, 511):
             warnings.warn(f"featurized_df.shape={featurized_df.shape}",TestSnapshotWarning)
         else:

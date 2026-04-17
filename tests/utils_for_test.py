@@ -1,4 +1,5 @@
 import importlib.resources as resources
+from importlib.resources.abc import Traversable
 
 class TestSnapshotWarning(UserWarning):
     """
@@ -10,9 +11,9 @@ class TestSnapshotWarning(UserWarning):
     """
     pass
 
-def get_package_dataset(version:str='20260415'):
+def get_package_dataset(version:str='20260415')->Traversable:
     file_name = f'dataset_{version}.csv'
-    resource_path = resources.files("hsdu.data") / file_name
+    resource_traversable = resources.files("hsdu.data") / file_name
     print(f'load test dataset version:{version}')
 
-    return resources.as_file(resource_path)
+    return resource_traversable

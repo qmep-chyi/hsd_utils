@@ -7,6 +7,7 @@ import warnings
 from pathlib import Path
 from abc import ABC, abstractmethod
 import importlib.resources as resources
+from importlib.resources.abc import Traversable
 import string
 from typing import Optional, Literal
 from collections.abc import Sequence
@@ -223,7 +224,7 @@ class BaseDataset(ABC, Sequence):
         requires `self.duplicated_comps_group`
         run `self.group_duplicates(other=None)` first!
         """
-        warnings.warn("use make_duplicates_group from hsdu.utils.duplicate", DeprecationWarning)
+        warnings.warn("use make_duplicates_group from hsdu.utils.duplicate", DeprecationWarning) #TODO: refactor
         try:
             self.duplicated_comps_group
         except AttributeError as e:
@@ -274,7 +275,7 @@ class D2TableDataset(BaseDataset):
         - XuDataset(): Load Xu 2025 HEAs used to validate.
     """
     def __init__(
-            self, dset_path: Path | str,
+            self, dset_path: Path | str | Traversable,
             drop_cols: Optional[list[str]] = None,
             index_col: Optional[str] = None,
             exception_col: Optional[str | list[str]] = "Exceptions",
@@ -295,23 +296,31 @@ class D2TableDataset(BaseDataset):
         else:
             self.index_col=index_col
 
-        if isinstance(dset_path, str):
-            dset_path = Path(dset_path)
-        if dset_path.is_absolute():
-            pass
-        else:
-            if dset_path.is_file():
-                pass
-            else:
-                with resources.as_file(resources.files("hsdu.data").joinpath(str(dset_path))) as pth:
-                    dset_path = pth
-                assert dset_path.is_file(),FileNotFoundError
-
-        super().__init__(dset_path, drop_cols = drop_cols)
-        self.dset_path: Path = self.dset_path
+        # load dataset as a pandas.DataFrame, initialize self.dset_path
         self.maxlen: Optional[int] = None
 
-        df:pd.DataFrame = self.load_data()
+        if isinstance(dset_path, str):
+            dset_path = Path(dset_path)
+        
+        self.dset_path = dset_path
+        if isinstance(dset_path, Path): #TODO: refactor
+            if dset_path.is_absolute() and dset_path.exists():
+                df=self.load_data()
+            elif not dset_path.is_absolute():
+                df=self.load_data(dset_path)
+            else:
+                raise FileNotFoundError(dset_path)
+        elif isinstance(dset_path, Traversable):
+            with resources.as_file(dset_path) as pth:
+                df=self.load_data(pth)
+        else:
+            raise FileNotFoundError(dset_path)
+        
+                
+
+        super().__init__(dset_path, drop_cols = drop_cols)
+        
+
         if exception_col is not None:
             df = df[df[exception_col].apply(pd.isna)]
         else:
@@ -449,13 +458,25 @@ class D2TableDataset(BaseDataset):
         """return onehot_fracs of whoel dataset"""
         return self._df[self.column_sets["onehot_elements"]].to_numpy().tolist()
 
-    def load_data(self) -> pd.DataFrame:
-        if self.dset_path.suffix==".csv":
+    def load_data(self, path_traversable=None) -> pd.DataFrame:
+        if path_traversable is not None:
+            try:
+                with resources.as_file(path_traversable) as pth:
+                    df = pd.read_csv(pth,
+                                    nrows=self.maxlen,
+                                    index_col=self.index_col)
+            except FileNotFoundError as e:
+                with resources.files("hsdu.data")/ path_traversable as pth:
+                    if Path(pth).is_file():
+                        df = pd.read_csv
+                    else:
+                        raise e
+        elif self.dset_path.name.endswith(".csv"):
             df = pd.read_csv(self.dset_path,
                             nrows=self.maxlen,
                             index_col=self.index_col)
         else:
-            raise ValueError("read only csv file(should have suffix).")
+            raise TypeError("read only csv file(should have suffix).")
 
         drop_cols_remaining=[]
         if len(self.drop_cols)>0:
