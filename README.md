@@ -1,11 +1,23 @@
 # Utils for HS dataset
 ***Repository for collaboration, not for public share***
 ## To Do
-* after v0.1.3
-    * refactor `tests\temp_test_update_xutesthea.py` as a test
-    * refactor terms like `compositional5`
-    * implement tag column parser
-    * update codes to get misc csv file paths from hsdu.comparison, like `test/utils_for_test.py`
+* v0.1.4
+    * Make a dataset export method that returns a dataset compatible with popular packages like `matbench`.
+    * refactor notebooks in `tests/temp_devs` and `preprocess_supercon` directory.
+    * reduce the code I have implemented,
+        * reduce abstractions for readability and reusability, use classes from `matminer` and `pymatgen`.
+            * Use `matminer`'s `MultipleFeaturizer` instead of the `MultiSourceFeaturizer` I've implemented.
+                * `MultiSourceFeaturizer` may need to be split into several featurizers.
+        * Use some subclass of the `MAPE` for dist_matrix instead of `MSRE`
+            * `MSRE` (Max Symmetric Relative Error) I've implemented.
+            * `Relative MAD` (Relative Mean Absolute Deviation): 
+                * using `sklearn`'s `MAPE` impelmentation
+                * Relative MAD $=\frac{1}{n} \sum_i \frac{|x_i-mean|}{|mean|}$
+    * notes since v0.1.3
+        * refactor `tests\temp_test_update_xutesthea.py` into a proper test.
+        * refactor terms like `compositional5`
+        * implement a tag column parser
+        * update code to get misc CSV file paths from hsdu.comparison, like `test\utils_for_test.py`
 
 ## Recent Changes
 * `v0.1.3` (2026-04-15..) 

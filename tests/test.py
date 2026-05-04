@@ -59,7 +59,7 @@ class TestDataset(unittest.TestCase):
         hsd = Dataset(test_dataset_path, config="default.json")
 
         # re-encode onhot fracs because elemental_set is different
-        xu_test_hea.encode_onehot_fracs(fixed_elements_set=hsd.elemental_set, rule_elements_set='overwrite', parse_pymatgen_comps_col='formula')
+        xu_test_hea.encode_onehot_fracs(fixed_elements_set=hsd.elemental_set, rule_elements_set='overwrite', composition_col='formula')
         dupl_group_to_xu49, idx2group_to_xu49=hsd.group_duplicates(other=xu_test_hea, cityblock=0.01, msre=0.02, update_attrs=False)
         # cityblock=0.01, msre=0.02: group-criteria arbitrary chosen. 
         dupl_group_internal, idx2group_internal=hsd.group_duplicates(cityblock=0.01, msre=0.02)

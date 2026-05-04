@@ -56,7 +56,7 @@ class TestGroupDuplicates(unittest.TestCase):
 
         # to other datatable
         xu_dataset = XuTestHEA()
-        xu_dataset.encode_onehot_fracs(fixed_elements_set=hsd.elemental_set, rule_elements_set='overwrite', parse_pymatgen_comps_col='formula')
+        xu_dataset.encode_onehot_fracs(fixed_elements_set=hsd.elemental_set, rule_elements_set='overwrite', composition_col='formula')
         dupl_group, idx2group=hsd.group_duplicates(other=xu_dataset, cityblock=0.01, msre=0.02, update_attrs=False)
         print('group_duplicates with XuTestHEA()')
         existing_dupl_groups=dict()

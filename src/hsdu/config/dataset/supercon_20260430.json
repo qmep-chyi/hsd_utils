@@ -1,0 +1,3 @@
+{
+    "targets": ["tcs", "min_tcs", "max_tcs", "mean_tcs", "std_tcs", "cv_tcs", "bulk_tcs", "max_bulk_tcs", "min_bulk_tcs", "mean_bulk_tcs", "std_bulk_tcs", "cv_bulk_tcs"]
+}
