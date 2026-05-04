@@ -382,7 +382,7 @@ class MultiSourceFeaturizer():
         """featurize dataframe
 
         arguments:
-            * df: dataframe with "comps_pymatge" column of `pymatgen`'s `Composition` class.
+            * df: dataframe with "comps_pymatgen" column of `pymatgen`'s `Composition` class.
             * save_npz: str = None
                 if not none, save processed features of each featurize functions respectedly not a whole one. 
                 should be directory path only

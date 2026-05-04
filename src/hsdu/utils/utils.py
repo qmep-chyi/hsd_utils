@@ -14,6 +14,12 @@ from itertools import product
 import pandas as pd
 import numpy as np
 
+def load_config(xls_path):
+    fp = open(xls_path, "r", encoding = "utf-8")
+    assert Path.is_file(xls_path)
+    config = json.load(fp)
+    fp.close()
+    return config
 def config_parser(config: str | dict | Path, mode: Literal["dataset", "featurize", "convert"]):
     """
     load and parse config
@@ -25,16 +31,16 @@ def config_parser(config: str | dict | Path, mode: Literal["dataset", "featurize
 
     if isinstance(config, Path):
         if config.is_absolute():
-            xls_path = config
+            config=load_config(config)
         else:
             with resources.as_file(resources.files("hsdu.config").joinpath(mode).joinpath(config.name)) as path:
                 xls_path = path
                 xls_path = xls_path.with_suffix(".json")
                 assert xls_path.is_file(), FileNotFoundError(xls_path)
-        fp = open(xls_path, "r", encoding = "utf-8")
-        assert Path.is_file(xls_path)
-        config = json.load(fp)
-        fp.close()
+                config=load_config(xls_path)
+    else:
+        raise FileNotFoundError(config)
+        
     
     assert isinstance(config, dict), f"config: {config}"
     return config

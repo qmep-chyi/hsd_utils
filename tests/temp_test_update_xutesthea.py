@@ -1,3 +1,8 @@
+""" temp_test_update_xutesthea.py
+
+codes to group XuTestHEA<->HE-SC dataset, to add the list of indices of similar compositions in our dataset.
+Mostly, already refactored to the `test_group_duplicates.py`
+"""
 import importlib.resources as resources
 import warnings
 from pathlib import Path
@@ -7,7 +12,7 @@ from hsdu.dataset import Dataset
 from hsdu.comparison import XuTestHEA
 hsd=Dataset(r'...hsdu\data\dataset_20260415.csv')
 xu_dataset = XuTestHEA(r'...\hsdu\data\miscs\xu2025_test_HEAs_private.csv')
-xu_dataset.encode_onehot_fracs(fixed_elements_set=hsd.elemental_set, rule_elements_set='overwrite', parse_pymatgen_comps_col='formula')
+xu_dataset.encode_onehot_fracs(fixed_elements_set=hsd.elemental_set, rule_elements_set='overwrite', composition_col='formula')
 dupl_group_to_xu49, idx2group_to_xu49=hsd.group_duplicates(other=xu_dataset, cityblock=0.01, msre=0.02, update_attrs=False)
 dupl_group_internal, idx2group_internal=hsd.group_duplicates(cityblock=0.01, msre=0.02)
 print('group_duplicates with XuTestHEA()')

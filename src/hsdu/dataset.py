@@ -72,7 +72,7 @@ class BaseDataset(ABC, Sequence):
         """validate index of `self._df` and `values(self.idx2aux)`"""
         df_index=self._df.index.tolist()
         for k, v in self.idx2aux.items():
-            assert set(list(v.keys()))==set(df_index), f"index of {k} != self._df.index"
+            assert list(v.keys())==df_index, f"idx2aux {k} != self._df.index"
         return True
     
     def __getitem__(self, i):
@@ -275,7 +275,7 @@ class D2TableDataset(BaseDataset):
         - XuDataset(): Load Xu 2025 HEAs used to validate.
     """
     def __init__(
-            self, dset_path: Path | str | Traversable,
+            self, dset_path: Path | str | Traversable | pd.DataFrame,
             drop_cols: Optional[list[str]] = None,
             index_col: Optional[str] = None,
             exception_col: Optional[str | list[str]] = "Exceptions",
@@ -303,7 +303,10 @@ class D2TableDataset(BaseDataset):
             dset_path = Path(dset_path)
         
         self.dset_path = dset_path
-        if isinstance(dset_path, Path): #TODO: refactor
+        if isinstance(dset_path, pd.DataFrame):
+            df = dset_path
+            self.dset_path=None
+        elif isinstance(dset_path, Path): #TODO: refactor
             if dset_path.is_absolute() and dset_path.exists():
                 df=self.load_data()
             elif not dset_path.is_absolute():
@@ -318,7 +321,7 @@ class D2TableDataset(BaseDataset):
         
                 
 
-        super().__init__(dset_path, drop_cols = drop_cols)
+        super().__init__(self.dset_path, drop_cols = drop_cols)
         
 
         if exception_col is not None:
@@ -335,9 +338,49 @@ class D2TableDataset(BaseDataset):
                     warnings.warn(f"{key} in self._df.columns, renamed to {key+'0'}",
                                   category=ElementsSymbolColWarning)
                     self._df.rename(columns={key:str(key+'0')}, inplace=True)
-            self.encode_onehot_fracs(parse_pymatgen_comps_col=parse_pymatgen_comps_col)
+            self.encode_onehot_fracs(composition_col=parse_pymatgen_comps_col)
 
-    def encode_onehot_fracs(self, inplace=True, parse_pymatgen_comps_col:str|None=None,
+    def normalize_fractions(self, inplace=True, invalid_frac:Literal['keep']='keep', overwrite_parsed_fracs:bool=True):
+        assert overwrite_parsed_fracs, NotImplementedError
+        if 'comps_pymatgen' not in self.idx2aux.keys():
+            raise KeyError()
+        compositions = self.idx2aux['comps_pymatgen']
+        out_compositions=dict()
+        out_fracs=dict()
+        for idx, comp in compositions.items():
+            if comp is not None:
+                fracs=[comp[el] for el in comp.elements]
+                if all([fr is not None for fr in fracs]):
+                    out_comp=Composition({el:comp.get_atomic_fraction(el) for el in comp.elements})
+                    if np.allclose(sum([out_comp[el] for el in out_comp.elements]), 1.0):
+                        out_compositions[idx]=out_comp
+                        out_fracs[idx]=[out_comp[el] for el in self.idx2aux['parsed_elements'][idx]]
+                    else:
+                        raise ValueError(comp)
+                elif invalid_frac=='keep':
+                    raise ValueError(comp)
+                    #out_dict[idx]=comp
+                else:
+                    raise NotImplementedError(invalid_frac)
+            elif invalid_frac=='keep':
+                out_compositions[idx]=None
+                # there are some parsed fractions with unknown fraction only for specific elements
+                # for example, hesc_id 10414: YBa2Cu3O_{7-\delta} (from 10.1016/j.physc.2020.1353623)
+                out_fracs[idx]=self.idx2aux['parsed_fracs'][idx]
+            else:
+                raise ValueError(comp)
+
+        assert compositions.keys()==out_compositions.keys()
+        assert compositions.keys()==out_fracs.keys()
+
+        if inplace:
+            self.idx2aux['comps_pymatgen']=out_compositions
+            self.idx2aux['parsed_fracs']=out_fracs
+            
+        return compositions
+        
+    def encode_onehot_fracs(self, inplace=True, composition_col:pd.Series|str|None=None,
+                            normalize_fractions:bool=True,
                             fixed_elements_set:list[str]|None=None,
                             rule_elements_set:Literal['validation', 'overwrite', 'pass']='default',
                             rule_invalid_fraction: Literal['all', 'single', 'error']='all'):
@@ -354,8 +397,15 @@ class D2TableDataset(BaseDataset):
                 - update self.index
                 - If false, raise NotImplementedError
             - composition_col:
-                - if not None, pymatgen.core.Composition(self._df[composition.col][idx])\
-                    instead of parsing 'elements' and 'elements_fracion'
+                - if str, use Composition(self._df[composition_col][idx])\
+                    to initialize 'elements' and 'elements_fracion'
+                - if pd.Series, use composition_col directly
+                    - to initialize 'elements' and 'elements_fraction'
+            - normalize_fractions: 
+                - make sum(fractions)==1
+                - on both self.idx2aux['comps_pymatgen'] and self.idx2aux['parsed_fracs']
+                - after parsing/initailization of 'elements, elements_fraction'
+                    - then self.idx2aux['comps_pymatgen] is initiallized already
             - rule_invalid_fraction: Literal['all', 'single', 'error']
                 - 'all' (default): return [None] for every onehot_frac values
                 - 'single': ignore invalid fraction (assign None, consider as 0)
@@ -368,12 +418,17 @@ class D2TableDataset(BaseDataset):
         df_index =  self._df.index.copy().tolist()
         self.index = df_index if self.index is None else self.index
 
-        if parse_pymatgen_comps_col is None:
+        if composition_col is None:
             self.idx2aux["parsed_fracs"] = dict(zip(df_index, self.parse_frac_col()))
             self.idx2aux["parsed_elements"] = dict(zip(df_index, self.parse_elements_col()))
             pymatgen_comps_rows = [Composition(dic) if None not in dic.values() else None for dic in self.onehot_frac_dicts()]
         else:
-            pymatgen_comps_rows = [Composition(comp) for comp in self._df.loc[:, parse_pymatgen_comps_col]]
+            if isinstance(composition_col, str):
+                pymatgen_comps_rows = [Composition(comp) for comp in self._df.loc[:, composition_col]]
+            elif isinstance(composition_col, pd.Series):
+                pymatgen_comps_rows = composition_col.values
+            else:
+                raise TypeError(composition_col)
             self.idx2aux['parsed_fracs'] = dict()
             self.idx2aux['parsed_elements'] = dict()
             for idx, pymatgen_comps in enumerate(pymatgen_comps_rows):
@@ -381,7 +436,9 @@ class D2TableDataset(BaseDataset):
                 self.idx2aux['parsed_elements'][idx] = element_list_iupac_ordered(elems)
                 self.idx2aux['parsed_fracs'][idx] = [pymatgen_comps[el] for el in self.idx2aux['parsed_elements'][idx]]
 
-        self.idx2aux["comps_pymatgen"] = dict(zip(df_index, pymatgen_comps_rows))
+        self.idx2aux["comps_pymatgen"] = dict(zip(df_index, pymatgen_comps_rows)) # Not IUPAC ordered
+        if normalize_fractions:
+            self.normalize_fractions(inplace=True, invalid_frac='keep')
         if fixed_elements_set is None:
             self.elemental_set=self.compile_elements_set(self.idx2aux["parsed_elements"])
         else:
@@ -434,6 +491,10 @@ class D2TableDataset(BaseDataset):
         first_elem_col=self._df.columns.tolist().index(self.elemental_set[0])
         last_elem_col=self._df.columns.tolist().index(self.elemental_set[-1])
         assert all(self._df.columns[first_elem_col:last_elem_col+1]==self.elemental_set)
+        for i, row in self._df.iterrows(): 
+            onehot_fracs_sum = row[self.column_sets['onehot_elements']].sum()
+            # 0 if Composition is None else 1.0
+            assert np.isclose(onehot_fracs_sum, 1.0) or np.isclose(onehot_fracs_sum, 0)
         return True
 
     def compile_elements_set(self, parsed_elems_rows:list[list[str]])->list:
@@ -495,7 +556,7 @@ class D2TableDataset(BaseDataset):
         cell_parser = FracParser()
         return self.parse_col(colname, cell_parser, False)
 
-    def group_duplicates(self, other:BaseDataset=None, cityblock=float|None, msre=float|None, chebyshev:float|None=None, cross_elements_set:bool=False, save_dir:str|Path|None=None, update_attrs:bool=True, verbose:bool=False)->tuple[dict, dict]:
+    def group_duplicates(self, other:BaseDataset=None, cityblock=float|None, msre:float|None=None, chebyshev:float|None=None, cross_elements_set:bool=False, save_dir:str|Path|None=None, update_attrs:bool=True, verbose:bool=False)->tuple[dict, dict]:
         """ group close enough compositions
 
         return: tuple[dict, dict]=(dup_group, idx2group_idx)

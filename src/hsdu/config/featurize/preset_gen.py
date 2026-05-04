@@ -1,4 +1,6 @@
 #%% [markdown]
+# #### (2026-04-24) OUTDATED: Not compatible with current version #####
+#
 # This code will generate json object to run this code
 # `matminer.featurizers.composition.composite.ElementProperty(data_source=src, features = [feat], stats=[stat])`
 # in this format
@@ -16,9 +18,8 @@
 #       * and for presets [composite module](https://github.com/hackingmaterials/matminer/blob/main/matminer/featurizers/composition/composite.py)  
 #   * For `feature`, see each data_source's description.  
 #   * For `stats`, see [PropertyStats](https://hackingmaterials.lbl.gov/matminer/matminer.featurizers.utils.html#matminer.featurizers.utils.stats.PropertyStats)  
-# 
+#       * note on `avg_dev`: it returns `np.average(np.abs(np.subtract(data_lst, mean)), weights=weights)`
 # note that, in [composite module](https://github.com/hackingmaterials/matminer/blob/main/matminer/featurizers/composition/composite.py), fractions working as a weight. if you want non-weighted values, provide equimolar chemical formula in when you declare Composite. (pymatgen.core.composition.Composition)
-
 # %% preset by sources
 import json
 
@@ -91,6 +92,58 @@ fp=open("minimal.json", "w")
 json.dump(out_lst, fp)
 
 fp.close()
+#%% DL132 + Configurational Entropy
+out_lst=[]
+
+srcs=["magpie", "pymatgen"]
+features = [
+    [
+        "Number",
+        "MendeleevNumber",
+        "AtomicWeight",
+        "MeltingT",
+        "Column",
+        "Row",
+        "CovalentRadius",
+        "Electronegativity",
+        "NsValence",
+        "NpValence",
+        "NdValence",
+        "NfValence",
+        "NValence",
+        "NsUnfilled",
+        "NpUnfilled",
+        "NdUnfilled",
+        "NfUnfilled",
+        "NUnfilled",
+        "FirstIonizationEnergy", 
+        "GSestBCClatcnt", 
+        "GSvolume_pa",
+        "GSbandgap",
+        "GSmagmom",
+        "SpaceGroupNumber",
+    ],
+    [
+        "thermal_conductivity",
+    ]
+]
+# avg_dev: see matminer.featurizers.utils.stats.PropertyStats.avg_dev
+
+stats = [["minimum", "maximum", "range", "mean", "avg_dev"], ["minimum", "maximum", "range", "mean", "std_dev"]]
+
+for idx, src in enumerate(srcs):
+    out_lst.append({"src":src, "feature":features[idx], "stat":stats[idx]})
+
+print(out_lst)
+fp=open("new133.json", "w")
+json.dump(out_lst, fp)
+
+fp.close()
+#%%
+import pandas as pd
+from hsdu.utils.utils import config_parser, init_feature_config
+new_config = config_parser('new133', mode='featurize') 
+_, _, feature_cols_df = init_feature_config(new_config)
 #%%
 fp_val=open("preset1.json")
 a = json.load(fp_val)
