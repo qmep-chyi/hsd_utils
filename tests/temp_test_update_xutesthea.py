@@ -13,8 +13,8 @@ from hsdu.comparison import XuTestHEA
 hsd=Dataset(r'...hsdu\data\dataset_20260415.csv')
 xu_dataset = XuTestHEA(r'...\hsdu\data\miscs\xu2025_test_HEAs_private.csv')
 xu_dataset.encode_onehot_fracs(fixed_elements_set=hsd.elemental_set, rule_elements_set='overwrite', composition_col='formula')
-dupl_group_to_xu49, idx2group_to_xu49=hsd.group_duplicates(other=xu_dataset, cityblock=0.01, msre=0.02, update_attrs=False)
-dupl_group_internal, idx2group_internal=hsd.group_duplicates(cityblock=0.01, msre=0.02)
+dupl_group_to_xu49, idx2group_to_xu49=hsd.group_duplicates(other=xu_dataset, cityblock=0.01, smape=0.02, update_attrs=False)
+dupl_group_internal, idx2group_internal=hsd.group_duplicates(cityblock=0.01, smape=0.02)
 print('group_duplicates with XuTestHEA()')
 existing_dupl_groups=dict()
 group_indices=[]

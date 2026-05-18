@@ -5,33 +5,26 @@ import warnings
 
 import numpy as np
 import pandas as pd
-from scipy.spatial.distance import cdist
+from scipy.spatial.distance import cdist, pdist, squareform
 from pymatgen.core import Composition
 from pymatgen.core.periodic_table import Element
+from sklearn.metrics import mean_absolute_percentage_error
+
 from hsdu.utils.conversion_utils import element_list_iupac_ordered, OneHotFracCodec
 
 class DuplicatesWarning(UserWarning):
     pass
 
-def max_relative_error(xa, xb, symmetric=True):
-    assert symmetric, NotImplementedError
-    out = np.zeros((len(xa), len(xb)))
-    for i in range(len(xa)):
-        for j in range(len(xb)):
-            error4elems=[]
-            for x, y in zip(xa[i], xb[j]):
-                if x==0.0 and y==0.0:
-                    error4elems.append(0.0)
-                else:
-                    error4elems.append(max([
-                        abs((x-y)/x) if x!=0.0 else 0.0,
-                        abs((x-y)/y) if y!=0.0 else 0.0
-                        ]))
+def smape(a, b):
+    if not a.shape==b.shape:
+        raise ValueError('input arrays should have same dimensions')
+    else:
+        mask = np.where((a!=0.0) & (b!=0.0))
+        ma = a[mask]
+        mb = b[mask]
+        return np.mean(np.abs(ma-mb)/((np.abs(ma)+np.abs(mb))/2))
 
-            out[i, j]=max(error4elems)
-    return out
-
-def dist4groups_matrix(comps4groups:list[list[Composition]], metric:Literal["cityblock", "chebyshev", "max_sym_relative_error"], 
+def dist4groups_matrix(comps4groups:list[list[Composition]], metric:Literal["cityblock", "chebyshev", "smape"], 
                        ignore_cross_elemental_set:bool = False, group_cross_elemental_set:bool=False):
     """
     arguments:
@@ -62,7 +55,7 @@ def dist4groups_matrix(comps4groups:list[list[Composition]], metric:Literal["cit
 def compare_dupl_groups(comps4groups:list[list[Composition]],
                         group_names:list[str],
                         ignore_cross_elemental_set:bool=False,
-                        print_output=True, metrices=['cityblock','chebyshev','MSRE']):
+                        print_output=True, metrices=['cityblock','chebyshev','smape']):
     out=dict()
     for metric in metrices:
         out[metric]=dist4groups_matrix(comps4groups, metric=metric,
@@ -109,7 +102,8 @@ def compare_dupl_groups_old2new(dataset, dup_group, entry_idx2group_idx, old_non
                     
 def distance_matrix(comps0:list[Composition] |list[list[float]],
                     comps1:list[Composition] |list[list[float]],
-                    metric:Literal["chebyshev", "cityblock", "euclidean", "L1", "l1", "L2","l2", "L_infty", "maximum", "tchebychev", "l_infty", "max_sym_relative_error", "MSRE"], elemental_set:list[str]|None = None,
+                    mode:Literal['pairwise', 'other'],
+                    metric:Literal["chebyshev", "cityblock", "euclidean", "L1", "l1", "L2","l2", "L_infty", "maximum", "tchebychev", "l_infty", "mape", "smape"], elemental_set:list[str]|None = None,
                     exclude_expanded_elements:bool=True):
     """wrapper of cdist from scipy.spatial.distance
     
@@ -122,11 +116,20 @@ def distance_matrix(comps0:list[Composition] |list[list[float]],
                 - L2, Euclidean distance. $\sqrt{\sum_i{(x_i-y_i})^2}$
             - "l_infty" | "maximum" | "tchebychev": to "chebyshev"
                 - \\max_i(|x_i-y_i|)
-            - "max_sym_relative_error": $max(max_i|x_i-y_i|/x_i, max_i|x_i-y_i|/y_i))$
+            - mape: mean absolute percentage error, implementation of scikit-learn
+            - smape: symmetric mean absolute percentage error, 
+                - mean(|X-F|/((|X|+|F|)/2)) for non-zero elements columns.
+                - chosen among several variants, but it is not the same one---
+                    - as it is defined over the exsiting, non-zero fractions.
+                    - so see the definition if required
+                - is a variant from the original, defined on weather forecast: 
+                    - mean(|X-F|/((X+F)/2))
+                    - See apendix A. of Makridakis' et al. 10.1016/S0169-2070(00)00057-1
         - exclude_expanded_elements:
             if True, ignore elements atomic_number>103. default True.
     """
     assert exclude_expanded_elements
+    assert mode=='other' or comps0==comps1
     max_atomic_number=103
     comps_list=[]
     for comps in (comps0, comps1):
@@ -144,15 +147,28 @@ def distance_matrix(comps0:list[Composition] |list[list[float]],
         else:
             raise TypeError(comps)
         
-    alias_map = {al: "chebyshev" for al in ("L_infty", "maximum", "tchebychev", "l_infty")}
-    alias_map = alias_map | {al: "cityblock" for al in ("l1", "L1")}
-    alias_map = alias_map | {al: "euclidean" for al in ("l2", "L2")}
-    alias_map = alias_map | {al: "max_sym_relative_error" for al in ('MSRE', 'msre')}
+    alias_map = {al: "chebyshev" for al in ("L_infty", "maximum", "tchebychev", "l_infty", "chebyshev")}
+    alias_map = alias_map | {al: "cityblock" for al in ("l1", "L1", "cityblock")}
+    alias_map = alias_map | {al: "euclidean" for al in ("l2", "L2","euclidean")}
     metric_out = alias_map.get(metric, metric)
-    if metric_out == "max_sym_relative_error":
-        return max_relative_error(comps_list[0], comps_list[1], symmetric=True)
+    if metric_out == "mape":
+        # see docstring of scipy.spatial.distance.pdist, calling conventions 21. Y = pdist(X, f)
+        metric_out = mean_absolute_percentage_error
+    elif metric_out == "smape":
+        metric_out = smape
     else:
-        return cdist(comps_list[0], comps_list[1], metric=metric_out)
+        if metric_out not in ('chebyshev', 'cityblock', 'euclidean'):
+            raise ValueError
+    
+    if mode=='other':
+        return cdist(comps_list[0], comps_list[1], metric_out)
+    
+    else:
+        try:
+            pdist(comps_list[0], metric_out)
+        except ValueError:
+            pass
+        return squareform(pdist(comps_list[0], metric_out))
 
 def comps_pymatgen2elemental_set(pymatgen_comps: Composition):
     """make elements_set list"""
@@ -161,7 +177,7 @@ def comps_pymatgen2elemental_set(pymatgen_comps: Composition):
         elements_sets.append("-".join(element_list_iupac_ordered(comp.elements)))
     return elements_sets
 
-def merge_overlap(index, duplicates_group, group_rows, mode='itself'):
+def merge_overlap(index, duplicates_group, group_rows, mode='pairwise'):
     """ merging overlapped groups
     
     leave 'first group' and remove others.
@@ -190,9 +206,9 @@ def merge_overlap(index, duplicates_group, group_rows, mode='itself'):
     if overlaps:
         return merge_overlap(index, duplicates_group, group_rows)
     else:
-        # if recursion finished, mode=='itself', all the index of the current set belongs to only one group.
+        # if recursion finished, mode=='pairwise', all the index of the current set belongs to only one group.
         #assert sum(len(duplicates_group[gidx]) for gidx in current_set_groups) == len(index) or mode=='other'
-        if mode=='itself':
+        if mode=='pairwise':
             current_set_groups = set([group_rows[i] for i in index])
             sum_groupped_indices=0
             for gidx in current_set_groups:
@@ -234,7 +250,7 @@ def group_duplicates_loop(index0, index1, dupl_groups, idx2gid, dist_cutoffs, di
             # init a new group
             last_dup_group_idx+=1 # is a new group_idx
             assert dupl_groups.get(last_dup_group_idx) is None or mode=='other'
-            if mode=='itself':
+            if mode=='pairwise':
                 dupl_groups.setdefault(last_dup_group_idx, [index0[i]])
                 current_group_idx = last_dup_group_idx
                 idx2gid.setdefault(index0[i], last_dup_group_idx)
@@ -257,7 +273,7 @@ def group_duplicates_loop(index0, index1, dupl_groups, idx2gid, dist_cutoffs, di
                         idx2gid[index0[i]]=index1[j] # TODO: maybe I would store multiple values to optimize merge_overlap()
                     else:
                         raise ValueError
-                elif mode=='itself':
+                elif mode=='pairwise':
                     if j<=i: # just double check
                         assert index0[i] in dupl_groups[idx2gid[index1[j]]]
                     elif j>i:
@@ -273,9 +289,9 @@ def group_duplicates_loop(index0, index1, dupl_groups, idx2gid, dist_cutoffs, di
 def make_duplicates_group(index0:list[int], index1:list[int],
                           dupl_groups, idx2group_idx,
                           dist_matrices:dict,
-                          dist_cutoffs:dict=dict(chebyshev=0.01, cityblock=0.02, MSRE=0.02),
+                          dist_cutoffs:dict=dict(chebyshev=0.01, cityblock=0.02, smape=0.02),
                           verbose=True,
-                          mode:Literal['itself', 'other']='itself'):
+                          mode:Literal['pairwise', 'other']='pairwise'):
     """
     Args:
     - index: if tuple(list, list), compare two different dataset. else, internally.
@@ -298,5 +314,5 @@ def make_duplicates_group(index0:list[int], index1:list[int],
         if len(duplicates_group)!=len(index0):
             warnings.warn('multiple self entries are grouped as duplicates of other entries. If duplicates of self and other datatable are merged in same way, it shoud not happens', DuplicatesWarning)
         return duplicates_group, group_rows
-    elif mode=='itself':
+    elif mode=='pairwise':
         return merge_overlap(index0, duplicates_group, group_rows, mode)

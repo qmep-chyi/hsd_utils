@@ -25,15 +25,12 @@ class XuTestHEA(D2TableDataset):
     
     see Supplementary Table S1
     """
-    def __init__(self, csv_path=None):
+    def __init__(self):
         warnings.warn(r"This data is not covered by the license of this repository but by Xu et al., Predicting superconducting temperatures with new hierarchical neural network AI model. Front. Phys. 20, 14205 (2025) DOI:10.15302/frontphys.2025.014205", ExternalDataWarning)
-        if csv_path is None:
-            with resources.files("hsdu.data.miscs") /"xu2025_test_HEAs.csv" as path:
-                csv_path = path
-
-        super().__init__(dset_path=csv_path, exception_col=None,
-                        parse_pymatgen_comps_col='formula')
-            
+        with resources.files("hsdu.data.miscs") /"xu2025_test_HEAs.csv" as path:
+            super().__init__(dset_path=path, exception_col=None,
+                            parse_pymatgen_comps_col='formula')
+        
 class StanevSuperCon(D2TableDataset):
     """load preprocessed SuperCon csv 
     
@@ -81,40 +78,3 @@ class StanevSuperCon(D2TableDataset):
         self.config=dict(targets=['Tc0'])
         if self.config['targets']==['Tc0']:
             assert 'Tc' in self._df.columns
-
-if __name__=="__main__":
-    # -----search xu2025 composition formula on merged dataset, check duplicated--------
-    #   * does not consider which references it came from
-    #   
-    xu_test = XuTestHEA()
-    dataset = Dataset(csv_path=r"C:\Users\chyi\draftsh2025\temp_devs\merged_dataset_forward.csv", config="default_forward.json", exception_col=None)
-
-    #exception_map, as we currently use "nominal composition" only.
-    exception_map={
-        7:324,  # (nominal - dendrite_phase) xu(7)->319 in `index_0810`. `sample C5`
-        20:326, # (nominal - dendrite_phase) xu(20)->321 in `index_0810``
-    }
-    xu_test.pymatgen_duplicates(dataset.df, rtol=0.1, save_dir="temp_devs/xu_to_0918_duplicates_rtol0_1.json", exception_map=exception_map)
-    for i in range(len(xu_test.df)):
-        print(list(xu_test.duplicated_comps_group[i].keys())[:-1])
-    # print index_0810    
-    for i in range(len(xu_test.df)):
-        index_0810s=[]
-        for key in xu_test.duplicated_comps_group[i].keys():
-            if isinstance(key, int):
-                if pd.isna(dataset.df.loc[key, 'index_0810']):
-                    index_0810s.append("new_0918")
-                else:
-                    index_0810s.append(int(dataset.df.loc[key, 'index_0810']))
-        print(index_0810s)
-
-    # revert dictionary
-    idx0918_to_xu_test={}
-    for k, v in xu_test.duplicated_comps_group.items():
-        for k1, _ in v.items():
-            if isinstance(k1, int):
-                idx0918_to_xu_test[k1]=k
-            
-    for i in range(len(dataset.df)):
-        print(idx0918_to_xu_test.get(i, "false"))
-    a=[1234,534] #placeholder..

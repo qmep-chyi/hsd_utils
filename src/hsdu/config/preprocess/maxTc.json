@@ -28,9 +28,10 @@
             "sort_by": "max_Tc"
         },
         "criteria": "dataset",
+        "rule_nan_compositions": "ignore",
         "merge_criteria":{
             "cityblock": 0.01,
-            "msre": 0.02,
+            "smape": 0.02,
             "cross_elements_set": false
         }
     },

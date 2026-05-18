@@ -1,6 +1,6 @@
 [project]
 name = "hsdu"
-version = "0.1.3"
+version = "0.1.4"
 description = "refactoring finished for the moment"
 authors = [
     {name = "changhyun yi",email = "chhyyi@gmail.com"}
@@ -18,7 +18,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-convert = [
+featurization = [
+    "kaleido>=1.3.0",
     "matminer>=0.9.3",
 ]
 

@@ -1,0 +1,14 @@
+{
+    "featurizers": [
+        "preset_matminer145",
+        "matminer_secondary"
+    ],
+    "n_jobs": 1,
+    "matminer_secondary": [
+        {
+            "src": "inhouse_secondary",
+            "feature": ["configurational_entropy"],
+            "stat": ["self_prop"]
+        }
+    ]
+}

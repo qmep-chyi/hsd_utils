@@ -27,10 +27,10 @@ class TestDataset(unittest.TestCase):
 
         # load as a D2TableDataset
 
-        dataset = D2TableDataset(get_package_dataset(), exception_col=None)
+        dataset = D2TableDataset(get_package_dataset(version='20260511'), exception_col=None)
 
         # load dataset
-        dataset = Dataset(get_package_dataset(), config="default.json")
+        dataset = Dataset(get_package_dataset(version='20260511'), config="default.json")
         if dataset._df.shape!=(432, 105):
             warnings.warn(f"ss_dataset._df.shape={dataset._df.shape}",TestSnapshotWarning)
         else:
@@ -54,15 +54,14 @@ class TestDataset(unittest.TestCase):
             print(f'xu_test45._df.shape: {xu_test_hea._df.shape}')
 
         # laod HE-SC dataset for comparison
-        with get_package_dataset() as path:
-            test_dataset_path = path
-        hsd = Dataset(test_dataset_path, config="default.json")
+        with get_package_dataset(version='20260511') as path:
+            hsd = Dataset(path, config="default.json")
 
         # re-encode onhot fracs because elemental_set is different
         xu_test_hea.encode_onehot_fracs(fixed_elements_set=hsd.elemental_set, rule_elements_set='overwrite', composition_col='formula')
-        dupl_group_to_xu49, idx2group_to_xu49=hsd.group_duplicates(other=xu_test_hea, cityblock=0.01, msre=0.02, update_attrs=False)
-        # cityblock=0.01, msre=0.02: group-criteria arbitrary chosen. 
-        dupl_group_internal, idx2group_internal=hsd.group_duplicates(cityblock=0.01, msre=0.02)
+        dupl_group_to_xu49, idx2group_to_xu49=hsd.group_duplicates(other=xu_test_hea, cityblock=0.01, smape=0.02, update_attrs=False)
+        # cityblock=0.01, smape=0.02: group-criteria arbitrary chosen. 
+        dupl_group_internal, idx2group_internal=hsd.group_duplicates(cityblock=0.01, smape=0.02)
         print('group_duplicates with XuTestHEA()')
         existing_dupl_groups=dict()
         group_indices=[]
@@ -105,9 +104,8 @@ class TestDataset(unittest.TestCase):
         
         :param self: Description
         """
-        with get_package_dataset() as path:
-            test_dataset_path = path
-        print(D2TableDataset(test_dataset_path, exception_col=None)._df.shape)
+        with get_package_dataset(version='20260511') as path:
+            print(D2TableDataset(path, exception_col=None)._df.shape)
    
 #if __name__=="__main__":
     #unittest.main()

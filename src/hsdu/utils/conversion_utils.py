@@ -1,5 +1,5 @@
 """
-utility functions to convert datatables.
+utility functions to preprocess/clean datatables.
 
 Todo: refactor process_target(too long)
 """

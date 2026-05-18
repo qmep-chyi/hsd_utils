@@ -20,7 +20,7 @@ def load_config(xls_path):
     config = json.load(fp)
     fp.close()
     return config
-def config_parser(config: str | dict | Path, mode: Literal["dataset", "featurize", "convert"]):
+def config_parser(config: str | dict | Path, mode: Literal["dataset", "featurize", "preprocess"]):
     """
     load and parse config
     """
@@ -45,6 +45,13 @@ def config_parser(config: str | dict | Path, mode: Literal["dataset", "featurize
     assert isinstance(config, dict), f"config: {config}"
     return config
 
+def format_feature_col_name(src:str, feature:str, stat:str):
+    col_name=f'{src}_{feature}_{stat.replace("::","_")}'
+    col_name=col_name.replace("_self_prop::", "_")
+    col_name=col_name.replace("_self_prop", "")
+    
+    return col_name
+
 def init_feature_config(config:dict):
     features = []
     statistics=[]
@@ -62,9 +69,7 @@ def init_feature_config(config:dict):
                 num_features += len(config_single_source)
                 for srcc, feat, stat in config_single_source.iter_config():
                     #delete some parameters used when featurize. see `hsdu\config\feature\comp450.json`
-                    col_name=f'{srcc}_{feat}_{stat.replace("::","_")}'
-                    col_name=col_name.replace("_self_prop::", "_")
-                    col_name=col_name.replace("_self_prop", "")
+                    col_name = f"{srcc} {stat} {feat}"
                     col_names.append(col_name)
                     features.append(feat)
                     if '::' in stat:
@@ -83,6 +88,8 @@ def init_feature_config(config:dict):
                     featurizers.append(featurizer)
         elif featurizer == "materials_project":
             raise NotImplementedError(featurizer)
+        elif featurizer =="preset_matminer145":
+            pass
         else:
             raise ValueError(featurizer)
     col_names_df = pd.DataFrame(zip(col_names, features, statistics, weigthed, sources, featurizers), columns=['col_name', 'feature','stat','weigthed', 'source', 'featurizer'])

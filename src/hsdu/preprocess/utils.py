@@ -118,29 +118,8 @@ class TcMerger():
         if idx is not None:
             self.re_init(idx)
         return idx_to_drop, df
-            
-class Converter():
-    """ Convert datatables
-    """
-    def __init__(self, data, convert_config, test:bool=False, output_dir:str|None=None, validate_by_comps:bool=True, skip_init_duplicate_group=False):
-        self.config = config_parser(config=convert_config, mode="convert")
-        if self.config.get("output_dir") is not None and output_dir is not None:
-            raise NameError("two `output_dir` from config file and args")
-        else:
-            self.save_dir = Path(self.config.get("output_dir", output_dir))
-            self.save_compositional5_pth=self.save_dir.joinpath(
-                self.config.get("save_compositional5_dir", "compositional5.csv"))
-            self.save_log_pth=self.save_dir.joinpath(
-                self.config.get("save_log_dir", "compositional5.log.json"))
-        self.log={} # temporal logging dict..
-        self.log['command_line_args']={
-            "data_path":str(data) if isinstance(data, (str, Path)) else str(data.dset_path),
-            "convert_config":convert_config,
-            "test":test}
-        self.log["config"]=self.config.copy()
 
-
-class Preprocessor(Converter):
+class Preprocessor():
     """ Preprecess and clean Raw HE-SC dataset
     
     Arguments:
@@ -150,9 +129,12 @@ class Preprocessor(Converter):
             (`elements` and `elements_fractions`) are not matched.
             composition string is parsed by `Composition` from pymatgen.core.composition.
     """
-    def __init__(self, data, convert_config, test:bool = False, output_dir:str|None=None, validate_by_comps:bool=False,
+    def __init__(self, data, preprocess_config, test:bool = False, output_dir:str|None=None, validate_by_comps:bool=False,
                  skip_init_duplicate_group=False) -> None:
-        super().__init__(data, convert_config, test, output_dir, validate_by_comps, skip_init_duplicate_group)
+        self.log={} # temporal dictionary for log..
+        self.config = config_parser(config=preprocess_config, mode="preprocess")
+        self.log["config_json"]=self.config
+
         if isinstance(data, (str, Path)):
             self.dataset = Dataset(data, self.config['dataset_config'])
         else:
@@ -166,16 +148,16 @@ class Preprocessor(Converter):
             pass
         elif self.config.get("duplicates_rule") is not None:
             dist_cutoffs = dict(**self.config['duplicates_rule'].get('merge_criteria'))
-            self.dataset.group_duplicates(**dist_cutoffs, save_dir='group_duplicates_log.json')
+            rule_nan_comps = self.config['duplicates_rule'].get('rule_nan_compositions')
+            self.dataset.group_duplicates(**dist_cutoffs, save_dir='group_duplicates_log.json', rule_nan_compositions=rule_nan_comps)
             self.dataset.add_duplicated_comps_column(criteria_rule=self.config['duplicates_rule'].get("criteria"))
         else:
             raise ValueError(self.config.get('duplicates_rule'))
         if self.config.get("duplicates_rule") is not None:
             self.log["duplicated_comps"]=self.dataset.log_with_composition()
         self.test = test
-        self.converted_df: pd.DataFrame
 
-    def convert(self, make_dir=False, exist_ok=False, simple_target=False):
+    def convert(self, save_dir=None, make_dir=False, exist_ok=False, simple_target=False)->pd.DataFrame:
         out_df=self.convert_tables(self.dataset, simple_target=simple_target)
         if self.test:
             from io import StringIO
@@ -184,14 +166,13 @@ class Preprocessor(Converter):
             assert b["elements"].apply(lambda x: all(isinstance(i, str) for i in ast.literal_eval(x))).all()
             assert b["elements_fraction"].apply(lambda x: all(isinstance(i, (int, float)) for i in ast.literal_eval(x))).all()
             assert b.drop(columns=["elements", "elements_fraction"]).apply(lambda x: all(isinstance(i, float) for i in x)).all()
-        elif self.save_dir is not None:
+        elif save_dir is not None:
             if make_dir:
-                self.save_dir.mkdir(exist_ok=exist_ok)
+                save_dir.mkdir(exist_ok=exist_ok)
             out_df.to_csv(self.save_compositional5_pth, index=False)
             with open(self.save_log_pth, 'w', encoding="utf-8") as f:
                     json.dump(self.log, f, indent=4, ensure_ascii=False)
-        else:
-            self.converted_df = out_df
+        return out_df
     
     def convert_tables(self, dataset: Dataset, simple_target=False):
         """ convert the HE-SC rawdata table to the cleaned table.
@@ -332,6 +313,6 @@ if __name__ == "__main__":
         converter = Preprocessor(args.dataset, args.convert_config, args.test)
         converter.convert()
     else:
-        converter = Preprocessor(r"C:\Users\chyi\hsdu2025\temp_devs\merged_dataset_forward.csv", "compositional5.json")
+        converter = Preprocessor(r"path_to_dataset_csv", "compositional5.json")
         converter.convert()
 # `python conversion.py path\to\merged_dataset_forward.xlsx compositional5_all_tc.json `

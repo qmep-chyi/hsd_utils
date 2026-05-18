@@ -27,7 +27,7 @@ class TestGroupDuplicates(unittest.TestCase):
     def test_group_duplicates(self):
         """test duplicated entries(have too close compositions)
         """
-        with get_package_dataset() as path:
+        with get_package_dataset(version='20260511') as path:
             test_dataset_path = path
         hsd = Dataset(test_dataset_path, config="default.json")
 
@@ -43,7 +43,7 @@ class TestGroupDuplicates(unittest.TestCase):
             warnings.warn(count_of_elements_sets.index[0], TestSnapshotWarning)
 
         # internal duplicates
-        dup_group, idx2group = hsd.group_duplicates(cityblock=0.01, msre=0.02)
+        dup_group, idx2group = hsd.group_duplicates(cityblock=0.01, smape=0.02, save_dir='test_group_dup_log.json', rule_nan_compositions='ignore')
 
         print(f'number of internal duplicates groups (including group with only 1 entry):{len(dup_group)}')
         print('largest groups:')
@@ -57,7 +57,7 @@ class TestGroupDuplicates(unittest.TestCase):
         # to other datatable
         xu_dataset = XuTestHEA()
         xu_dataset.encode_onehot_fracs(fixed_elements_set=hsd.elemental_set, rule_elements_set='overwrite', composition_col='formula')
-        dupl_group, idx2group=hsd.group_duplicates(other=xu_dataset, cityblock=0.01, msre=0.02, update_attrs=False)
+        dupl_group, idx2group=hsd.group_duplicates(other=xu_dataset, cityblock=0.01, smape=0.02, update_attrs=False, rule_nan_compositions='ignore')
         print('group_duplicates with XuTestHEA()')
         existing_dupl_groups=dict()
         group_indices=[]

@@ -26,13 +26,13 @@ import warnings
 import numpy as np
 import pandas as pd
 
-from pymatgen.core import Composition
 from pymatgen.core.periodic_table import Element
-from matminer.featurizers.composition import ElementProperty
+from matminer.featurizers.composition import ElementProperty, IonProperty, ValenceOrbital, Stoichiometry
 from matminer.featurizers.utils.stats import PropertyStats
 from matminer.utils.data import AbstractData
 
-from hsdu.dataset import Dataset, D2TableDataset
+
+from hsdu.dataset import Dataset
 from hsdu.data.vendor.matminer.data import MagpieData
 from hsdu.utils.utils import config_parser, ConfigSingleSource, merge_dfs, init_feature_config
 
@@ -119,7 +119,7 @@ class MastMLMagpieData(MagpieData):
         with resources.as_file(resources.files("hsdu").joinpath("data", "vendor", "mastml", "mastml", "magpie")) as f:
             super().__init__(data_dir = f, skip_lines_table=3, impute_nan=impute_nan)
 
-class MyElementProperty(ElementProperty):
+class HSDElementProperty(ElementProperty):
     """
     def featurize_uw to 'unweight'.
     """
@@ -132,6 +132,15 @@ class MyElementProperty(ElementProperty):
             self.data_source = MastMLMagpieData(impute_nan = impute_nan)
         else:
             assert isinstance(self.data_source, AbstractData)
+
+    def feature_labels(self):
+        # override, to keep column names with my old versions
+        labels = []
+        for attr in self.features:
+            src = self.data_source.__class__.__name__
+            for stat in self.stats:
+                labels.append(f"{src} {stat} {attr}")
+        return labels
 
 class InhouseSecondary(AbstractData):
     """
@@ -349,7 +358,7 @@ class MultiSourceFeaturizer():
         for config_single_source in config:
             print(f'start featurize {len(config_single_source["feature"])*len(config_single_source["stat"])} features: {config_single_source}')
             data_source=config_single_source["src"]
-            featurizer = MyElementProperty(data_source = data_source, features=config_single_source["feature"], stats=config_single_source["stat"], config=config_single_source)
+            featurizer = HSDElementProperty(data_source = data_source, features=config_single_source["feature"], stats=config_single_source["stat"], config=config_single_source)
             featurizer.set_n_jobs(self.config['n_jobs'])
             featurizer.featurize_dataframe(featurized_df, col_id = comps_col, inplace=True)
         return featurized_df
@@ -366,7 +375,7 @@ class MultiSourceFeaturizer():
         data_source=InhouseSecondary(configs=config)
         for config_single_source in config:
             print(f'start featurize {len(config_single_source["feature"])*len(config_single_source["stat"])} features: {config_single_source}')
-            featurizer=MyElementProperty(data_source=data_source, features=config_single_source["feature"],
+            featurizer=HSDElementProperty(data_source=data_source, features=config_single_source["feature"],
                                          stats=config_single_source["stat"], config=config_single_source)
             featurizer.set_n_jobs(self.config['n_jobs'])
             featurizer.featurize_dataframe(featurized_df, col_id = comps_col, inplace=True)
@@ -426,6 +435,63 @@ class MultiSourceFeaturizer():
                 NotImplementedError("save_file should be a '.csv' or `*.npz` or `*.json` file path")
         return featurized_df
         
+def featurizer_config_loader(config: dict | str | Path, override_njobs:int|None=None):
+    """
+    replacing config parse and loops of (old)MultiSourceFeaturizer, 
+        - return tuple[featurizer_list, column_names:pd.DataFrame]
+        - example usage: 
+            ```
+            from matminer.feature.base import MultipleFeaturizer
+            featurizers_config, _ = featurizer_config_loader('comp450.json')
+            featurizer = MultipleFeaturizer(featurizers_config) 
+            ```
+    """
+    config = config_parser(config, mode="featurize")
+    out_list =[]
+    assert len(config["featurizers"])>0, config["featurizers"]
+    _, _, col_names_df = init_feature_config(config)
+
+    inhouse_secondary=None
+    for src in config['featurizers']:
+        if src=='preset_matminer145':
+            # feature set shown in matminer publication: 10.1016/j.commatsci.2018.05.018
+            out_list.extend([
+                Stoichiometry(), ElementProperty.from_preset("magpie"),
+                            ValenceOrbital(props=['avg']), IonProperty(fast=True)])
+
+            if config.get('n_jobs') is not None:
+                config_njob=config.get('n_jobs')
+                for feat in out_list:
+                    feat.set_n_jobs(config_njob)
+        else:
+            for config_single_source in config[src]:
+                if src=='matminer_secondary':
+                    if inhouse_secondary is None:
+                        # initialize inhouse_secondary only at the first time (it reads some magpie tables)
+                        inhouse_secondary=InhouseSecondary(configs=config[src])
+                    data_source=inhouse_secondary
+                elif src=='matminer_expanded':
+                    data_source=config_single_source["src"]
+                else: 
+                    # original ElementalProperty from matminer
+                    data_source=config_single_source["src"]
+                featurizer_kwargs = dict(data_source=data_source, features=config_single_source["feature"],
+                                            stats=config_single_source["stat"], config=config_single_source)
+                
+                if src in ('matminer_secondary', 'matminer_expanded'):
+                    featurizer=HSDElementProperty(**featurizer_kwargs)
+                    featurizer.set_n_jobs(config['n_jobs'])
+                else:
+                    # use original ElementalProperty from matminer
+                    featurizer=ElementProperty(**featurizer_kwargs)
+                out_list.append(featurizer)
+                
+    if override_njobs is not None:
+        for feat in out_list:
+            feat.set_n_jobs(override_njobs)
+    return out_list, col_names_df
+
+    
 
 class CustomPropertyStats(PropertyStats):
     def __init__(self):

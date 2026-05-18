@@ -529,7 +529,9 @@ class D2TableDataset(BaseDataset):
             except FileNotFoundError as e:
                 with resources.files("hsdu.data")/ path_traversable as pth:
                     if Path(pth).is_file():
-                        df = pd.read_csv
+                        df = pd.read_csv(pth,
+                                         nrows=self.maxlen,
+                                         index_col=self.index_col)
                     else:
                         raise e
         elif self.dset_path.name.endswith(".csv"):
@@ -556,7 +558,8 @@ class D2TableDataset(BaseDataset):
         cell_parser = FracParser()
         return self.parse_col(colname, cell_parser, False)
 
-    def group_duplicates(self, other:BaseDataset=None, cityblock=float|None, msre:float|None=None, chebyshev:float|None=None, cross_elements_set:bool=False, save_dir:str|Path|None=None, update_attrs:bool=True, verbose:bool=False)->tuple[dict, dict]:
+    def group_duplicates(self, other:BaseDataset=None, cityblock=float|None, smape:float|None=None, chebyshev:float|None=None, cross_elements_set:bool=False,
+                         save_dir:str|Path|None=None, update_attrs:bool=True, verbose:bool=False, rule_nan_compositions: Literal['error', 'ignore']='error')->tuple[dict, dict]:
         """ group close enough compositions
 
         return: tuple[dict, dict]=(dup_group, idx2group_idx)
@@ -578,28 +581,41 @@ class D2TableDataset(BaseDataset):
         if other is not None:
             mode='other'
         else:
-            mode='itself'
+            mode='pairwise'
 
         dup_group=dict()
         idx2group_idx=dict()
 
         for elem_set, group_len in elements_set_counts_dict0.items():
             onehot_fracs = self.onehot_fracs()
+            # initiallize inset_idx, skip idx if there is no valid Composition
+            idx_to_skip=[]
             if elem_set!='not_cross_elements_set':
-                inset_idx0=[i for i in self._df.index[self._df['elements_set']==elem_set]]
-                inset_idx1=inset_idx0 if other is None else [i for i in other._df.index[other._df['elements_set']==elem_set]]
+                mask_elem_set = self._df['elements_set']==elem_set
+                inset_idx=self._df.index[mask_elem_set].tolist()
+                inset_idx_notna = self._df.index[mask_elem_set & (self._df[self.elemental_set].notna()).any(axis=1)].tolist()
+                
+                if len(inset_idx)!=len(inset_idx_notna):
+                    if rule_nan_compositions=='error':
+                        raise ValueError(self._df[self.elemental_set])
+                    elif rule_nan_compositions=='ignore':
+                        idx_to_skip.extend(set(inset_idx)-set(inset_idx_notna))
+                        inset_idx=inset_idx_notna
+                inset_idx1=inset_idx if other is None else [i for i in other._df.index[other._df['elements_set']==elem_set]]
             else:
-                inset_idx0=self._df.index.to_list()
-                inset_idx1=inset_idx0
+                inset_idx=self._df.index.tolist()
+                inset_idx_notna = self._df.index[self._df[self.elemental_set].notna().any(axis=1)].tolist()
+                inset_idx1=inset_idx
 
             if len(inset_idx1)>0:
                 # if mode=='other', it can be 0 (no entry with that elem set exist)
-                assert len(inset_idx0)==group_len
-                assert len(inset_idx1)==elements_set_counts_dict1.get(elem_set, 0) or mode=='itself' # when no entry in 'other' with elem_set
+                if not len(inset_idx)==group_len-len(idx_to_skip):
+                    raise AssertionError
+                assert len(inset_idx1)==elements_set_counts_dict1.get(elem_set, 0) or mode=='pairwise' # when no entry in 'other' with elem_set
 
-                onehot_fracs = [onehot_fracs[i] for i in inset_idx0]
+                onehot_fracs = [onehot_fracs[i] for i in inset_idx]
                 
-                if mode=='itself':
+                if mode=='pairwise':
                     onehot_fracs1 = onehot_fracs
                 else:
                     onehot_fracs1 = other.onehot_fracs()
@@ -607,30 +623,36 @@ class D2TableDataset(BaseDataset):
 
                 dist_cutoffs=dict(
                     cityblock=cityblock,
-                    MSRE=msre,
-                    chebyshev=chebyshev
+                    smape=smape,
+                    chebyshev=chebyshev,
                 )
                 
                 # prepare dist_matrices
                 dist_matrices=dict(
                     chebyshev = distance_matrix(onehot_fracs, onehot_fracs1,
                                         metric="l_infty",
-                                        elemental_set=self.elemental_set),
+                                        elemental_set=self.elemental_set,
+                                        mode=mode),
                     cityblock = distance_matrix(onehot_fracs, onehot_fracs1,
                                         metric="l1",
-                                        elemental_set=self.elemental_set),
-                    MSRE = distance_matrix(onehot_fracs, onehot_fracs1,
-                                        metric='max_sym_relative_error',
-                                        elemental_set=self.elemental_set)
+                                        elemental_set=self.elemental_set,
+                                        mode=mode),
+                    smape = distance_matrix(onehot_fracs, onehot_fracs1,
+                                        metric='smape',
+                                        elemental_set=self.elemental_set,
+                                        mode=mode)
                 )
 
                 # make_duplicates_group
-                dup_group, idx2group_idx = make_duplicates_group(inset_idx0, inset_idx1, dup_group, idx2group_idx, dist_matrices,
+                dup_group, idx2group_idx = make_duplicates_group(inset_idx, inset_idx1, dup_group, idx2group_idx, dist_matrices,
                                                                         dist_cutoffs,
                                                                         mode=mode, verbose=verbose)
             else:
-                assert mode=='other'
-                assert len(inset_idx1)==0
+                if inset_idx == inset_idx1 and rule_nan_compositions=='ignore':
+                    pass
+                else:
+                    assert mode=='other'
+                
         if update_attrs:
             self.duplicated_comps_group = {k:list(v) for k, v in dup_group.items()}
             self.idx2aux['duplicate_group'] = idx2group_idx

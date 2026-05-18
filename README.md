@@ -1,25 +1,30 @@
 # Utils for HS dataset
 ***Repository for collaboration, not for public share***
 ## To Do
-* v0.1.4
+* v0.1.5
     * Make a dataset export method that returns a dataset compatible with popular packages like `matbench`.
-    * refactor notebooks in `tests/temp_devs` and `preprocess_supercon` directory.
+    * refactor notebooks in `tests/temp_devs` directory and `tests\temp_test_update_xutesthea.py`
     * reduce the code I have implemented,
         * reduce abstractions for readability and reusability, use classes from `matminer` and `pymatgen`.
-            * Use `matminer`'s `MultipleFeaturizer` instead of the `MultiSourceFeaturizer` I've implemented.
-                * `MultiSourceFeaturizer` may need to be split into several featurizers.
-        * Use some subclass of the `MAPE` for dist_matrix instead of `MSRE`
-            * `MSRE` (Max Symmetric Relative Error) I've implemented.
-            * `Relative MAD` (Relative Mean Absolute Deviation): 
-                * using `sklearn`'s `MAPE` impelmentation
-                * Relative MAD $=\frac{1}{n} \sum_i \frac{|x_i-mean|}{|mean|}$
-    * notes since v0.1.3
-        * refactor `tests\temp_test_update_xutesthea.py` into a proper test.
-        * refactor terms like `compositional5`
+    * since v0.1.3
         * implement a tag column parser
-        * update code to get misc CSV file paths from hsdu.comparison, like `test\utils_for_test.py`
 
 ## Recent Changes
+* `v0.1.4` (2026-05-18..)
+    * Now use `matminer`'s `MultipleFeaturizer` instead of the `MultiSourceFeaturizer` I've implemented.
+        * new featurizer config `comp146.json`: 
+            * `matminer`'s 145 feature preset 
+            * configurational entropy
+    * Replace `MSRE` to `symmetric mean absolute percentage error`(smape)
+        * sMAPE: $L(\vec{a}, \vec{b})=\frac{1}{n}\sum_i{\frac{|a_i-b_i|}{(|a_i|+|b_i|)/2}}$
+        * it merges one more entry so 255 entries left in the featurized table.
+    * tested with the dataset version 20260511
+    * (term, dirs) replace `convert` to `preprocess`
+    * `hsdu.dataset.D2TableDataset.group_duplicates` method ignores entries with invalid fractions in default.
+    * `reproduce` directory to reporoduce main results 
+        * preprocess+featurize
+        * the dedicated dataset and supercon
+
 * `v0.1.3` (2026-04-15..) 
     * fixed wrong indentation
     * removed outdated things
