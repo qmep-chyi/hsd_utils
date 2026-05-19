@@ -23,9 +23,9 @@ from matminer.featurizers.composition import IonProperty, Stoichiometry, Valence
 import pandas as pd
 import numpy as np
 
-from hsdu.dataset import Dataset, config_parser, feature_col_name_parser
+from hsdu.dataset import Dataset, config_parser
 from hsdu.preprocess.feature import HSDElementProperty, InhouseSecondary, MylabelElementProperty
-from hsdu.utils.utils import merge_dfs
+from hsdu.utils.utils import merge_dfs, feature_name_parser
 from hsdu.utils.conversion_utils import process_targets
 
 class TcMerger():
@@ -300,25 +300,6 @@ class Preprocessor():
         self.log["exceptions"]["shape(df)_after_tc_exceptions"]=out_df.shape
         return out_df
 
-#COMMAND_LINE_ARGS=False
-COMMAND_LINE_ARGS=True
-if __name__ == "__main__":
-    if COMMAND_LINE_ARGS:
-        parser = argparse.ArgumentParser(
-                        prog='convert_tables',
-                        description='convert between different formats')
-        parser.add_argument('dataset')
-        parser.add_argument('convert_config')
-        parser.add_argument('-t', '--test', action='store_true', default=False)
-        args=parser.parse_args()
-        
-        converter = Preprocessor(args.dataset, args.convert_config, args.test)
-        converter.convert()
-    else:
-        converter = Preprocessor(r"path_to_dataset_csv", "compositional5.json")
-        converter.convert()
-
-
 def featurizer_config_loader(config: dict | str | Path, override_njobs:int|None=None, inhouse_secondary:None|InhouseSecondary=None):
     """load featurizer config, initialize featurizers
 
@@ -380,10 +361,30 @@ def featurizer_config_loader(config: dict | str | Path, override_njobs:int|None=
                 col_names.extend(featurizer.feature_labels())
                 out_list.append(featurizer)
 
-    col_names_df = feature_col_name_parser(config, col_names)
+    col_names_df = feature_name_parser(config, col_names)
 
     if override_njobs is not None:
         for feat in out_list:
             feat.set_n_jobs(override_njobs)
     return out_list, col_names_df
 # `python conversion.py path\to\merged_dataset_forward.xlsx compositional5_all_tc.json `
+
+
+#COMMAND_LINE_ARGS=False
+COMMAND_LINE_ARGS=True
+if __name__ == "__main__":
+    if COMMAND_LINE_ARGS:
+        parser = argparse.ArgumentParser(
+                        prog='convert_tables',
+                        description='convert between different formats')
+        parser.add_argument('dataset')
+        parser.add_argument('convert_config')
+        parser.add_argument('-t', '--test', action='store_true', default=False)
+        args=parser.parse_args()
+        
+        converter = Preprocessor(args.dataset, args.convert_config, args.test)
+        converter.convert()
+    else:
+        converter = Preprocessor(r"path_to_dataset_csv", "compositional5.json")
+        converter.convert()
+

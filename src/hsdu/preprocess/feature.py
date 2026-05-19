@@ -34,7 +34,7 @@ from matminer.utils.data import AbstractData
 
 from hsdu.dataset import Dataset
 from hsdu.data.vendor.matminer.data import MagpieData
-from hsdu.utils.utils import config_parser, ConfigSingleSource, merge_dfs, feature_col_name_parser, format_feature_col_name
+from hsdu.utils.utils import config_parser, ConfigSingleSource, merge_dfs, feature_name_parser, format_feature_col_name
 
 def __getattr__(name):
     if name == "Featurizer":
@@ -364,7 +364,7 @@ class MultiSourceFeaturizer():
         self.config = config_parser(config, mode="featurize")
 
         assert len(self.config["featurizers"])>0, self.config["featurizers"]
-        self.col_names_df = feature_col_name_parser(self.config)
+        self.col_names_df = feature_name_parser(self.config)
         self.feature_count=len(self.col_names_df)
         self.col_names=self.col_names['col_name'].tolist()
     def featurize_matminer(self,

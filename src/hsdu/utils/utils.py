@@ -52,11 +52,11 @@ def format_feature_col_name(src:str, feature:str, stat:str):
     
     return col_name
 
-def feature_col_name_parser(config:dict, col_names:str)->pd.DataFrame:
+def feature_name_parser(config:dict, col_names:str)->pd.DataFrame:
     features = []
     statistics=[]
     sources=[]
-    weigthed=[]
+    weighted=[]
     featurizers=[]
     
     num_features = 0
@@ -76,23 +76,44 @@ def feature_col_name_parser(config:dict, col_names:str)->pd.DataFrame:
                         assert len(parsed_stat)<=2
                         if parsed_stat[0]=='self_prop':
                             statistics.append(parsed_stat[1])
-                            weigthed.append(None)
+                            weighted.append(None)
                         else:
                             statistics.append(parsed_stat[0])
-                            weigthed.append(parsed_stat[1])
+                            weighted.append(parsed_stat[1])
                     else:
                         statistics.append(stat if stat!='self_prop' else None)
-                        weigthed.append(None)
+                        weighted.append(None)
                     sources.append(srcc)
                     featurizers.append(featurizer)
         elif featurizer == "materials_project":
             raise NotImplementedError(featurizer)
         elif featurizer =="preset_matminer145":
-            pass
+            #TODO: hard coded
+            idx0=num_features
+            
+            # stoichiometry 6
+            sources.extend(['stoichiometry']*6+['element_property']*132+['valence_orbital']*4+['ion_property']*3)
+            featurizers.extend(['matminer']*145)
+            features.extend(col_names[idx0:idx0+6])
+            statistics.extend(col_names[idx0:idx0+6])
+            # magpie preset 132
+            for i in range(idx0+6, idx0+138):
+                src, feat, stat = col_names[i].split(sep='_', maxsplit=2)
+                if src!='MagpieData':
+                    raise ValueError(src)
+                features.append(feat)
+                statistics.append(stat)
+            # ValenceOrbital 4, IonProperty 3
+            features.extend(['s', 'p', 'd', 'f', 'compound_possible']+['ionic_char']*2)
+            statistics.extend(['avg']*4+[None, 'max', 'avg'])
+            weighted.extend([None]*145)
+            #chekc, update num_features
+            assert len(features)==len(sources)==len(statistics)==len(weighted)==len(featurizers), ValueError
+            num_features+=145
         else:
             raise ValueError(featurizer)
-        
-    col_names_df = pd.DataFrame(zip(col_names, features, statistics, weigthed, sources, featurizers), columns=['col_name', 'feature','stat','weigthed', 'source', 'featurizer'])
+
+    col_names_df = pd.DataFrame(zip(col_names, features, statistics, weighted, sources, featurizers), columns=['col_name', 'feature','stat','weighted', 'source', 'featurizer'])
     assert num_features==len(col_names_df)
 
     return col_names_df

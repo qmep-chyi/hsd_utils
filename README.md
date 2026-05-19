@@ -6,8 +6,7 @@
     * refactor notebooks in `tests/temp_devs` directory and `tests\temp_test_update_xutesthea.py`
     * reduce the code I have implemented,
         * reduce abstractions for readability and reusability, use classes from `matminer` and `pymatgen`.
-    * since v0.1.3
-        * implement a tag column parser
+    * implement a tag column parser
 
 ## Recent Changes
 * `v0.1.4` (2026-05-18..)
@@ -21,9 +20,10 @@
     * tested with the dataset version 20260511
     * (term, dirs) replace `convert` to `preprocess`
     * `hsdu.dataset.D2TableDataset.group_duplicates` method ignores entries with invalid fractions in default.
-    * `reproduce` directory to reporoduce main results 
-        * preprocess+featurize
-        * the dedicated dataset and supercon
+    * `reproduce`: reproduce preprocess+featurize
+        * `reproduce\preprocess.py` 
+        * `reproduce\preprocess_supercon.py` from SuperCon (requires refactor)
+
 
 * `v0.1.3` (2026-04-15..) 
     * fixed wrong indentation
