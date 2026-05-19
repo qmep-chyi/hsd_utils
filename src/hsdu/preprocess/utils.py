@@ -19,10 +19,12 @@ import json
 from abc import abstractmethod
 from pathlib import Path
 
+from matminer.featurizers.composition import IonProperty, Stoichiometry, ValenceOrbital
 import pandas as pd
 import numpy as np
 
-from hsdu.dataset import Dataset, config_parser
+from hsdu.dataset import Dataset, config_parser, feature_col_name_parser
+from hsdu.preprocess.feature import HSDElementProperty, InhouseSecondary, MylabelElementProperty
 from hsdu.utils.utils import merge_dfs
 from hsdu.utils.conversion_utils import process_targets
 
@@ -315,4 +317,73 @@ if __name__ == "__main__":
     else:
         converter = Preprocessor(r"path_to_dataset_csv", "compositional5.json")
         converter.convert()
+
+
+def featurizer_config_loader(config: dict | str | Path, override_njobs:int|None=None, inhouse_secondary:None|InhouseSecondary=None):
+    """load featurizer config, initialize featurizers
+
+    replacing config parse and loops of (old)MultiSourceFeaturizer, 
+        - return tuple[featurizer_list, column_names:pd.DataFrame]
+        - example usage: 
+            ```
+            from matminer.feature.base import MultipleFeaturizer
+            featurizers_config, _ = featurizer_config_loader('comp450.json')
+            featurizer = MultipleFeaturizer(featurizers_config) 
+            ```
+    """
+    col_names=[]
+    if isinstance(config, (str, Path)):
+        config = config_parser(config, mode="featurize")
+
+    out_list =[]
+    assert len(config["featurizers"])>0, config["featurizers"]
+    #_, _, col_names_df = init_feature_config(config)
+
+    for src in config['featurizers']:
+        if src=='preset_matminer145':
+            # feature set presented in matminer publication: 10.1016/j.commatsci.2018.05.018
+            preset_matminer145_featurizers=[
+                Stoichiometry(), MylabelElementProperty.from_preset("magpie"),
+                ValenceOrbital(props=['avg']), IonProperty(fast=True)]
+
+            for featurizer in preset_matminer145_featurizers:
+                col_names.extend(featurizer.feature_labels())
+
+            out_list.extend(preset_matminer145_featurizers)
+
+            if config.get('n_jobs') is not None:
+                config_njob=config.get('n_jobs')
+                for feat in out_list:
+                    feat.set_n_jobs(config_njob)
+        else:
+            for config_single_source in config[src]:
+                if src=='matminer_secondary':
+                    if inhouse_secondary is None:
+                        # initialize inhouse_secondary only at the first time (it reads some magpie tables)
+                        inhouse_secondary=InhouseSecondary(configs=config[src])
+                    data_source=inhouse_secondary
+                elif src=='matminer_expanded':
+                    data_source=config_single_source["src"]
+                else:
+                    # original ElementalProperty from matminer
+                    data_source=config_single_source["src"]
+                featurizer_kwargs = dict(data_source=data_source, features=config_single_source["feature"],
+                                            stats=config_single_source["stat"], config=config_single_source)
+
+                if src in ['matminer_expanded','matminer_secondary']:
+                    featurizer=HSDElementProperty(**featurizer_kwargs)
+                    featurizer.set_n_jobs(config['n_jobs'])
+                else:
+                    # use original ElementalProperty from matminer
+                    featurizer=MylabelElementProperty(**featurizer_kwargs)
+                    featurizer.set_n_jobs(config['n_jobs'])
+                col_names.extend(featurizer.feature_labels())
+                out_list.append(featurizer)
+
+    col_names_df = feature_col_name_parser(config, col_names)
+
+    if override_njobs is not None:
+        for feat in out_list:
+            feat.set_n_jobs(override_njobs)
+    return out_list, col_names_df
 # `python conversion.py path\to\merged_dataset_forward.xlsx compositional5_all_tc.json `

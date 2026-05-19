@@ -13,7 +13,7 @@ import pandas as pd
 
 from hsdu.dataset import Dataset, D2TableDataset
 from hsdu.preprocess.utils import Preprocessor 
-from hsdu.preprocess.feature import featurizer_config_loader
+from hsdu.preprocess.utils import featurizer_config_loader
 from hsdu.utils.utils import config_parser, feature_col_name_parser
 from .utils_for_test import TestSnapshotWarning, get_package_dataset
 
