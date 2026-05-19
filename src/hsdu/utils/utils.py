@@ -52,7 +52,7 @@ def format_feature_col_name(src:str, feature:str, stat:str):
     
     return col_name
 
-def init_feature_config(config:dict):
+def feature_col_name_parser(config:dict, col_names:str)->pd.DataFrame:
     features = []
     statistics=[]
     sources=[]
@@ -60,17 +60,16 @@ def init_feature_config(config:dict):
     featurizers=[]
     
     num_features = 0
-    col_names = []
     for featurizer in config["featurizers"]:
         if featurizer in ("matminer", "matminer_expanded", "matminer_secondary"):
             assert isinstance(config[featurizer], list), f"config[source] should be a list of dictionaries but: {config[featurizer]}"
             for config_1source in config[featurizer]:
                 config_single_source = ConfigSingleSource(config_1source)
                 num_features += len(config_single_source)
-                for srcc, feat, stat in config_single_source.iter_config():
+                srcc=config_1source['src']
+                for feat, stat in config_single_source.iter_config():
                     #delete some parameters used when featurize. see `hsdu\config\feature\comp450.json`
-                    col_name = f"{srcc} {stat} {feat}"
-                    col_names.append(col_name)
+
                     features.append(feat)
                     if '::' in stat:
                         parsed_stat = stat.split('::')
@@ -92,9 +91,11 @@ def init_feature_config(config:dict):
             pass
         else:
             raise ValueError(featurizer)
+        
     col_names_df = pd.DataFrame(zip(col_names, features, statistics, weigthed, sources, featurizers), columns=['col_name', 'feature','stat','weigthed', 'source', 'featurizer'])
+    assert num_features==len(col_names_df)
 
-    return num_features, col_names, col_names_df
+    return col_names_df
     
 def merge_dfs(src_df: pd.DataFrame, featurized_df: pd.DataFrame, reset_index=True):
     """
@@ -116,8 +117,6 @@ class ConfigSingleSource():
         * iter_vars: list[str]
             * config_dic[iter_vars[idx]]: list[str] for valid idx.
             * should follow the loop - hierarchy of featurizer like `matminer.featurizers.composition.composite.Elementproperty().featurize()`
-        * non_iter_vars: list[str].
-            * return(tuple) starts with [config_dict[v] for v in non_iter_vars] before iter_vars.
         
     method:
         * iter_config: return iterator
@@ -131,10 +130,9 @@ class ConfigSingleSource():
             "stat": list[str]
         }
     """
-    def __init__(self, config_dict: dict, non_iter_vars:list[str] = ["src"], iter_vars:list[str] = ["feature", "stat"]):
+    def __init__(self, config_dict: dict, iter_vars:list[str] = ["feature", "stat"]):
         self.config = config_dict
-        self.iterate_lists = [[config_dict[v]] for v in non_iter_vars]
-        self.iterate_lists = self.iterate_lists + [self.config[var] for var in iter_vars]
+        self.iterate_lists = [self.config[var] for var in iter_vars]
         
         self.shape = map(len, self.iterate_lists)
         self.len = math.prod(self.shape)

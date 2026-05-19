@@ -34,7 +34,7 @@ from matminer.utils.data import AbstractData
 
 from hsdu.dataset import Dataset
 from hsdu.data.vendor.matminer.data import MagpieData
-from hsdu.utils.utils import config_parser, ConfigSingleSource, merge_dfs, init_feature_config
+from hsdu.utils.utils import config_parser, ConfigSingleSource, merge_dfs, feature_col_name_parser, format_feature_col_name
 
 def __getattr__(name):
     if name == "Featurizer":
@@ -119,7 +119,20 @@ class MastMLMagpieData(MagpieData):
         with resources.as_file(resources.files("hsdu").joinpath("data", "vendor", "mastml", "mastml", "magpie")) as f:
             super().__init__(data_dir = f, skip_lines_table=3, impute_nan=impute_nan)
 
-class HSDElementProperty(ElementProperty):
+class MylabelElementProperty(ElementProperty):
+    """
+    override 'feature_labels' of ElementProperty to ours
+    """
+
+    def feature_labels(self):
+        labels = []
+        for attr in self.features:
+            src = self.data_source.__class__.__name__
+            for stat in self.stats:
+                labels.append(format_feature_col_name(src, attr, stat))
+        return labels
+    
+class HSDElementProperty(MylabelElementProperty):
     """
     def featurize_uw to 'unweight'.
     """
@@ -133,18 +146,14 @@ class HSDElementProperty(ElementProperty):
         else:
             assert isinstance(self.data_source, AbstractData)
 
-    def feature_labels(self):
-        # override, to keep column names with my old versions
-        labels = []
-        for attr in self.features:
-            src = self.data_source.__class__.__name__
-            for stat in self.stats:
-                labels.append(f"{src} {stat} {attr}")
-        return labels
+
 
 class InhouseSecondary(AbstractData):
     """
     secondary features, using elemental features from MagpieData
+    #TODO: refactor, split to two class, 
+    #   * data_source(inherit AbstractData)
+    #   * featurizer(inherit MylabelElementProperty)
     
     to featurize 8 descriptors of table 2 of xu et al 2025,
     self.get_elemental_property() return required data.
@@ -154,25 +163,39 @@ class InhouseSecondary(AbstractData):
         assert not impute_nan, NotImplementedError(impute_nan)
     
         self.all_elemental_props={}
-        self.available_props=[]
-        self.config_per_sources = [ConfigSingleSource(config_1source) for config_1source in configs]
+        self.config_per_sources = [config_1source for config_1source in configs]
     
         self.first_properties=["NsValence", "NpValence", "NdValence", "NfValence", "NValence", "Electronegativity"]
         with resources.as_file(resources.files("matminer.utils")) as path:
             magpie_data = MagpieData(data_dir=path.joinpath("data_files", "magpie_elementdata"), impute_nan=impute_nan, features=self.first_properties)
-        self.eight_high_entropy_dedicated_init(magpie_data=magpie_data)
+        self.initialize_data(magpie_data=magpie_data)
+        self.available_props, self.feature_labels_initialized = self.initialize_feature_configs()
 
-    def eight_high_entropy_dedicated_init(self, magpie_data: MagpieData):
+    def initialize_data(self, magpie_data: MagpieData):
         self.configurational_entropy_init()
         self.occu_ve_init(magpie_data=magpie_data)
         self.ionicity_init(magpie_data=magpie_data)
+
+    def initialize_feature_configs(self):
+        """initialize attributes from config.
+
+        * self.available_props
+        """
+        available_props=[]
+        feature_labels_initialized=[]
         for config_1source in self.config_per_sources:
-            for names in config_1source.iter_config():
-                col_name="_".join(names)
-                #delete some parameters used when featurize. see `hsdu\config\feature\comp450.json`
-                col_name.replace("_self_prop::", "_")
-                col_name.replace("_self_prop", "")
-                self.available_props.append(col_name)
+            
+            src=config_1source['src']
+            config_1source = ConfigSingleSource(config_1source)
+            for feat, stat in config_1source.iter_config():
+                col_name = format_feature_col_name(src, feat, stat)
+                available_props.append(col_name)
+                feature_labels_initialized.append(col_name)
+        return available_props, feature_labels_initialized
+    
+    def feature_labels(self)->list[str]:
+        """override"""
+        return self.feature_labels_initialized
         
     def configurational_entropy_init(self) -> int:
         """it depends only on fractions
@@ -301,8 +324,10 @@ class InhouseSecondary(AbstractData):
         return [self.get_elemental_property(e, property_name) for e in elems]
 
 class MultiSourceFeaturizer():
-    """featurizer for in-house dataset and features
-    
+    """ featurizer for in-house dataset and features
+
+    ##### DEPRECATED: Use MultipleFeaturizer of matminer! #####
+
     load config, run multiple MyElementProperty class.
     To apply different set of stats and features combination,
     Multiple Featurizer(`MyElementProperty` class) will be used
@@ -335,10 +360,13 @@ class MultiSourceFeaturizer():
         * `comp450.json`: reproducing xu et al 2025 except for many elemental properties on Table 1
     """
     def __init__(self, config: dict | str | Path):
+        warnings.warn("Use MultipleFeaturizer of matminer!", DeprecationWarning)
         self.config = config_parser(config, mode="featurize")
 
         assert len(self.config["featurizers"])>0, self.config["featurizers"]
-        self.feature_count, self.col_names, self.col_names_df = init_feature_config(self.config)
+        self.col_names_df = feature_col_name_parser(self.config)
+        self.feature_count=len(self.col_names_df)
+        self.col_names=self.col_names['col_name'].tolist()
     def featurize_matminer(self,
                            featurized_df: pd.DataFrame,
                            config: dict,
@@ -435,8 +463,9 @@ class MultiSourceFeaturizer():
                 NotImplementedError("save_file should be a '.csv' or `*.npz` or `*.json` file path")
         return featurized_df
         
-def featurizer_config_loader(config: dict | str | Path, override_njobs:int|None=None):
-    """
+def featurizer_config_loader(config: dict | str | Path, override_njobs:int|None=None, inhouse_secondary:None|InhouseSecondary=None):
+    """load featurizer config, initialize featurizers
+
     replacing config parse and loops of (old)MultiSourceFeaturizer, 
         - return tuple[featurizer_list, column_names:pd.DataFrame]
         - example usage: 
@@ -446,18 +475,25 @@ def featurizer_config_loader(config: dict | str | Path, override_njobs:int|None=
             featurizer = MultipleFeaturizer(featurizers_config) 
             ```
     """
-    config = config_parser(config, mode="featurize")
+    col_names=[]
+    if isinstance(config, (str, Path)):
+        config = config_parser(config, mode="featurize")
+    
     out_list =[]
     assert len(config["featurizers"])>0, config["featurizers"]
-    _, _, col_names_df = init_feature_config(config)
+    #_, _, col_names_df = init_feature_config(config)
 
-    inhouse_secondary=None
     for src in config['featurizers']:
         if src=='preset_matminer145':
-            # feature set shown in matminer publication: 10.1016/j.commatsci.2018.05.018
-            out_list.extend([
-                Stoichiometry(), ElementProperty.from_preset("magpie"),
-                            ValenceOrbital(props=['avg']), IonProperty(fast=True)])
+            # feature set presented in matminer publication: 10.1016/j.commatsci.2018.05.018
+            preset_matminer145_featurizers=[
+                Stoichiometry(), MylabelElementProperty.from_preset("magpie"),
+                ValenceOrbital(props=['avg']), IonProperty(fast=True)]
+            
+            for featurizer in preset_matminer145_featurizers:
+                col_names.extend(featurizer.feature_labels())
+
+            out_list.extend(preset_matminer145_featurizers)
 
             if config.get('n_jobs') is not None:
                 config_njob=config.get('n_jobs')
@@ -478,13 +514,17 @@ def featurizer_config_loader(config: dict | str | Path, override_njobs:int|None=
                 featurizer_kwargs = dict(data_source=data_source, features=config_single_source["feature"],
                                             stats=config_single_source["stat"], config=config_single_source)
                 
-                if src in ('matminer_secondary', 'matminer_expanded'):
+                if src in ['matminer_expanded','matminer_secondary']:
                     featurizer=HSDElementProperty(**featurizer_kwargs)
                     featurizer.set_n_jobs(config['n_jobs'])
                 else:
                     # use original ElementalProperty from matminer
-                    featurizer=ElementProperty(**featurizer_kwargs)
+                    featurizer=MylabelElementProperty(**featurizer_kwargs)
+                    featurizer.set_n_jobs(config['n_jobs'])
+                col_names.extend(featurizer.feature_labels())
                 out_list.append(featurizer)
+        
+    col_names_df = feature_col_name_parser(config, col_names)
                 
     if override_njobs is not None:
         for feat in out_list:

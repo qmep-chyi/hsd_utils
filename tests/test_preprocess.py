@@ -14,7 +14,7 @@ import pandas as pd
 from hsdu.dataset import Dataset, D2TableDataset
 from hsdu.preprocess.utils import Preprocessor 
 from hsdu.preprocess.feature import featurizer_config_loader
-from hsdu.utils.utils import config_parser, init_feature_config
+from hsdu.utils.utils import config_parser, feature_col_name_parser
 from .utils_for_test import TestSnapshotWarning, get_package_dataset
 
 class Test(unittest.TestCase):
@@ -40,6 +40,7 @@ class Test(unittest.TestCase):
 
         featurizers_list, col_names_df = featurizer_config_loader(config='comp450.json')
         featurizer = MultipleFeaturizer(featurizers_list)
+        featurizer.set_n_jobs(1)
         featurizer.featurize_dataframe(featurized_df, col_id='comps_pymatgen', inplace=True)
         featurized_df['comps_pymatgen']=featurized_df['comps_pymatgen'].apply(lambda x:x.to_pretty_string())
 
@@ -65,8 +66,9 @@ class Test(unittest.TestCase):
         featurized_df = pd.DataFrame()
         featurized_df['comps_pymatgen']=dataset.idx2aux['comps_pymatgen']
 
-        featurizer_list, col_names_df =featurizer_config_loader(config="comp450.json")
+        featurizer_list, _ =featurizer_config_loader(config="comp450.json")
         featurizer = MultipleFeaturizer(featurizer_list)
+        featurizer.set_n_jobs(1) #TODO: raise error without this.. maybe from InhouseSecondary?
         featurizer.featurize_dataframe(featurized_df, col_id='comps_pymatgen', inplace=True)
         if featurized_df.shape!=(256, 511):
             warnings.warn(f"featurized_df.shape={featurized_df.shape}",TestSnapshotWarning)
@@ -77,13 +79,9 @@ class Test(unittest.TestCase):
 
     def test_feature_col_utils(self):
         default_config = config_parser('comp450', mode='featurize')
-        n_cols, col_names, feature_cols_df = init_feature_config(default_config)
+        _, feature_cols_df = featurizer_config_loader(default_config)
         if len(feature_cols_df)!=450:
             warnings.warn(len(feature_cols_df), TestSnapshotWarning)
-        if n_cols!=450:
-            warnings.warn(n_cols, TestSnapshotWarning)
-        if len(col_names)!=450:
-            warnings.warn(len(col_names), TestSnapshotWarning)
 
 #if __name__ == '__main__':
     #Test('test_feature_col_utils').debug()

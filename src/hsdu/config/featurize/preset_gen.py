@@ -141,9 +141,9 @@ json.dump(out_lst, fp)
 fp.close()
 #%%
 import pandas as pd
-from hsdu.utils.utils import config_parser, init_feature_config
+from hsdu.utils.utils import config_parser, feature_col_name_parser
 new_config = config_parser('new133', mode='featurize') 
-_, _, feature_cols_df = init_feature_config(new_config)
+feature_cols_df = feature_col_name_parser(new_config)
 #%%
 fp_val=open("preset1.json")
 a = json.load(fp_val)
