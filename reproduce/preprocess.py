@@ -84,5 +84,5 @@ for pconfig in preprocess_config_list:
         featurized_df, col_names_df = featurization(cleaned_df, fconfig)
         assert len(cleaned_df)==len(featurized_df)
         out_df = pd.concat([cleaned_df.reset_index(drop=True), featurized_df.reset_index(drop=True)], axis=1)
-        out_df.to_csv(f'{pconfig}_{fconfig}.csv')
+        out_df.to_csv(f'{pconfig}_{fconfig}.csv', index=False)
         col_names_df.to_json(f'{pconfig}_{fconfig}_features_list.json', orient='index', indent=4)
