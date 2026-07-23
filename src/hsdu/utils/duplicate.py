@@ -19,10 +19,10 @@ def smape(a, b):
     if not a.shape==b.shape:
         raise ValueError('input arrays should have same dimensions')
     else:
-        mask = np.where((a!=0.0) & (b!=0.0))
+        mask = np.where((a!=0.0) | (b!=0.0))
         ma = a[mask]
         mb = b[mask]
-        return np.mean(np.abs(ma-mb)/((np.abs(ma)+np.abs(mb))/2))
+        return np.mean(np.abs(ma-mb)/((np.abs(ma)+np.abs(mb))))
 
 def dist4groups_matrix(comps4groups:list[list[Composition]], metric:Literal["cityblock", "chebyshev", "smape"], 
                        ignore_cross_elemental_set:bool = False, group_cross_elemental_set:bool=False):
@@ -124,7 +124,8 @@ def distance_matrix(comps0:list[Composition] |list[list[float]],
                     - so see the definition if required
                 - is a variant from the original, defined on weather forecast: 
                     - mean(|X-F|/((X+F)/2))
-                    - See apendix A. of Makridakis' et al. 10.1016/S0169-2070(00)00057-1
+                    - (Wikipedia) https://en.wikipedia.org/wiki/Symmetric_mean_absolute_percentage_error
+                    - Original ref: https://doi.org/10.1016/0305-0483(86)90013-7
         - exclude_expanded_elements:
             if True, ignore elements atomic_number>103. default True.
     """

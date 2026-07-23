@@ -9,6 +9,23 @@
     * implement a tag column parser
 
 ## Recent Changes
+* Working On...
+    * fix definition of distance matrix `hsdu.utils.duplicate.smape`, added citations.
+        ```python
+        def smape(...):
+            ...
+                mask = np.where((a!=0.0) | (b!=0.0))
+                ma = a[mask]
+                mb = b[mask]
+                return np.mean(np.abs(ma-mb)/((np.abs(ma)+np.abs(mb))))
+        ```
+        $$\frac{1}{n}\sum^n_{i=1}\frac{|X_i-F_i|}{(|X_i|+|F_i|)}$$
+        * [Flores et al. 1986](https://linkinghub.elsevier.com/retrieve/pii/0305048386900137) reported popular form/variants shown in multiple papers.
+            $$\frac{1}{n}\sum^n_{i=1}\frac{|X_i-F_i|}{(|X_i+F_i)}\times 100$$
+        * with a modification from the `adjusted MAPE` suggested by `Armstrong, J. Scott. Long-Range Forecasting: From Crystal Ball to Computer. 2. ed. A Wiley Interscience Publication. Wiley, 1985.`
+            $$\frac{1}{n}\sum^n_{i=1}\frac{|X_i-F_i|}{0.5\times (X_i+F_i)} \times 100$$
+        * Looks like $X_i, F_i$ are assumed as a positive real numbers on some wheather forecasting tasks
+
 * `v0.1.4` (2026-05-18..)
     * Now use `matminer`'s `MultipleFeaturizer` instead of the `MultiSourceFeaturizer` I've implemented.
         * new featurizer config `comp146.json`: 

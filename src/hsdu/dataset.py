@@ -280,6 +280,7 @@ class D2TableDataset(BaseDataset):
             index_col: Optional[str] = None,
             exception_col: Optional[str | list[str]] = "Exceptions",
             encode_onehot_fracs:bool=True,
+            rule_elements_set:bool=True,
             parse_pymatgen_comps_col:str|None=None):
         
         self._df:pd.DataFrame
@@ -289,6 +290,7 @@ class D2TableDataset(BaseDataset):
         if drop_cols is None:
             self.drop_cols = []
         else:
+            assert isinstance(drop_cols, list)
             self.drop_cols = drop_cols
 
         if index_col is None:
@@ -338,7 +340,7 @@ class D2TableDataset(BaseDataset):
                     warnings.warn(f"{key} in self._df.columns, renamed to {key+'0'}",
                                   category=ElementsSymbolColWarning)
                     self._df.rename(columns={key:str(key+'0')}, inplace=True)
-            self.encode_onehot_fracs(composition_col=parse_pymatgen_comps_col)
+            self.encode_onehot_fracs(composition_col=parse_pymatgen_comps_col, rule_elements_set=rule_elements_set)
 
     def normalize_fractions(self, inplace=True, invalid_frac:Literal['keep']='keep', overwrite_parsed_fracs:bool=True):
         assert overwrite_parsed_fracs, NotImplementedError
@@ -691,14 +693,16 @@ class Dataset(D2TableDataset):
                  config: str | dict | Path = "default",
                  drop_cols: Optional[list[str]] = None,
                  exception_col: Optional[str | list[str]] = "Exceptions",
-                 encode_onehot_fracs:bool=True):
+                 encode_onehot_fracs:bool=True,
+                 rule_elements_set:bool=True):
         self.config = config_parser(config, mode="dataset")
         super().__init__(
             csv_path, 
             drop_cols = self.config.get("drop_cols", drop_cols), 
             index_col= self.config.get("index_column"),
             exception_col=self.config.get("exception_col", exception_col),
-            encode_onehot_fracs=encode_onehot_fracs)
+            encode_onehot_fracs=encode_onehot_fracs,
+            rule_elements_set=rule_elements_set)
         #self.validate_elem_frac_length()
 
         self.idx_by_hesc_id={v:k for k, v in self._df['hesc_id'].items()}
