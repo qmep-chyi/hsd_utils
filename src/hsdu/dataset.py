@@ -218,46 +218,6 @@ class BaseDataset(ABC, Sequence):
                             warnings.warn(f"idx: {idx}, comp:{comp}, comps_pymatgen:{self.idx2aux['comps_pymatgen'][idx]}")
                             print(f"while norm_fracs(comp):{norm_fracs(comp)}, norm_fracs_comps_pymatgen:{norm_fracs(self.idx2aux['comps_pymatgen'][idx])}")
 
-    def add_duplicated_comps_column(self, criteria_rule: str, inplace=True):
-        """ Prepare to merge duplicated rows. duplicates groups 
-        
-        requires `self.duplicated_comps_group`
-        run `self.group_duplicates(other=None)` first!
-        """
-        warnings.warn("use make_duplicates_group from hsdu.utils.duplicate", DeprecationWarning) #TODO: refactor
-        try:
-            self.duplicated_comps_group
-        except AttributeError as e:
-            if "duplicated_comps_group" in str(e):
-                raise InitRequriedError("run self.pymatgen_duplicates() first!")
-
-        assert criteria_rule in ['single_ref', 'dataset'], NotImplementedError(criteria_rule)
-        duplicate_groups=[] # will be a new column, group name = first instance idx(in self.dataset.duplicated_comps_group.keys)
-        if criteria_rule=='single_ref':
-            for idx0, row0 in self._df.iterrows():
-                group_row=np.nan
-                idx0_group = self.idx2aux['duplicate_group'][idx0]
-                if idx0_group in self.duplicated_comps_group.keys():
-                    # previously, it was 'idx0 in self...'. Since `f738577`(Mar 24, 2026) it was wrong. 
-                    # some tests requires (If merge_duplicates results are consistent)
-                    for idx1 in self.duplicated_comps_group[idx0]:            
-                        cite0=row0["doi"]
-                        cite1=self._df.loc[idx1, "doi"]
-                        group_row = idx0_group if cite0==cite1 else np.nan
-                duplicate_groups.append(group_row)
-        elif criteria_rule=='dataset':
-            duplicate_groups = self.idx2aux['duplicate_group']
-        else:
-            raise NotImplementedError(criteria_rule)
-        if inplace:
-            self._df['duplicated_group']=duplicate_groups
-        return duplicate_groups
-    
-    def assign_dtypes(self, dtype:type=str):
-        for col in self._df.columns:
-            if self._df.col.dtype not in (list, dict, float, str):
-                self._df[col] = self._df[col].astype(dtype)
-
 class D2TableDataset(BaseDataset):
     """Base Class for Dataset classes, load csv file
     
@@ -280,7 +240,7 @@ class D2TableDataset(BaseDataset):
             index_col: Optional[str] = None,
             exception_col: Optional[str | list[str]] = "Exceptions",
             encode_onehot_fracs:bool=True,
-            rule_elements_set:bool=True,
+            rule_elements_set:Literal['validation', 'overwrite', 'pass']='default',
             parse_pymatgen_comps_col:str|None=None):
         
         self._df:pd.DataFrame
@@ -561,8 +521,13 @@ class D2TableDataset(BaseDataset):
         return self.parse_col(colname, cell_parser, False)
 
     def group_duplicates(self, other:BaseDataset=None, cityblock=float|None, smape:float|None=None, chebyshev:float|None=None, cross_elements_set:bool=False,
-                         save_dir:str|Path|None=None, update_attrs:bool=True, verbose:bool=False, rule_nan_compositions: Literal['error', 'ignore']='error')->tuple[dict, dict]:
+                         save_dir:str|Path|None=None, update_attrs:bool=True, verbose:bool=False, rule_nan_compositions: Literal['error', 'ignore']='error',
+                         log_columns:Optional[list[str]]=None)->tuple[dict, dict]:
         """ group close enough compositions
+
+        update_attrs:bool. if Ture, update
+            * self.duplicated_comps_group:dict[int, list(int)]. duplicate group index to entries belong to the group.
+            * self.idx2aux['duplicate_group']: dict[int, int]. index -> duplicate group index.
 
         return: tuple[dict, dict]=(dup_group, idx2group_idx)
             * dup_group: {group_index: list of indices of grouped entries}
@@ -576,7 +541,7 @@ class D2TableDataset(BaseDataset):
                 elements_set_counts_dict1 = elements_set_counts_dict0
         elif cross_elements_set:
             warnings.warn('cross_elements_set is False, possibly take long time to group duplicate (Code is not optimised)', UserWarning)
-            elements_set_counts_dict0 = {'not_cross_elements_set': len(self)}
+            elements_set_counts_dict0 = {'cross_elements_set': len(self)}
         else:
             raise NotImplementedError
         
@@ -592,7 +557,7 @@ class D2TableDataset(BaseDataset):
             onehot_fracs = self.onehot_fracs()
             # initiallize inset_idx, skip idx if there is no valid Composition
             idx_to_skip=[]
-            if elem_set!='not_cross_elements_set':
+            if elem_set!='cross_elements_set':
                 mask_elem_set = self._df['elements_set']==elem_set
                 inset_idx=self._df.index[mask_elem_set].tolist()
                 inset_idx_notna = self._df.index[mask_elem_set & (self._df[self.elemental_set].notna()).any(axis=1)].tolist()
@@ -660,16 +625,60 @@ class D2TableDataset(BaseDataset):
             self.idx2aux['duplicate_group'] = idx2group_idx
 
         if save_dir is not None:
-            with open(save_dir, 'w', encoding="utf-8") as f:
-                log_duplicates = self.log_with_composition()
-                json.dump(log_duplicates, f, indent=4, ensure_ascii=False)
+            self.save_duplicates_log(save_dir, log_columns, indent=4, ensure_ascii=False)
+            
         return dup_group, idx2group_idx
 
-    def log_with_composition(self):
+    def temporal_split(self, split:int, col:str="year", log_path:str|Path|None=None, log_cols:list[str]|None=None):
+        """optional process after D2TableDataset.group_duplicates
+
+        if a duplicate_comps_group have entries crossing self._df['col'] over the `temporal_split`,
+        entries after (greater than or equal) `temporal_split` are removed from the group.
+        (Note that it does not change the number of duplicated_comps_group)
+
+        For temporal split of the train-test set, re-initializes;
+            * self.duplicated_comps_group and self.idx2aux['duplicate_group']
+            * self.idx2aux['duplicate_group']
+        """
+        new_dup_group=dict()
+        new_idx2group=dict()
+        for group_idx, group_members in self.duplicated_comps_group.items():
+            exist_before = False
+            new_dupls=group_members.copy()
+            for idx in group_members:
+                assert idx not in new_idx2group.keys()
+                new_idx2group[idx]=group_idx
+                assert self.idx2aux['duplicate_group'][idx]==group_idx
+                time = self._df.loc[idx, col]
+                if time<split:
+                    exist_before=True
+                elif exist_before:
+                    # if there were entries before, ignore entries after.
+                    new_dupls.remove(idx)
+                    assert idx not in new_dupls
+                    new_idx2group[idx]=None
+            assert new_dup_group.get("group_idx") is None
+            new_dup_group[group_idx]=new_dupls
+
+        self.duplicated_comps_group = new_dup_group
+        self.idx2aux['duplicate_group'] = new_idx2group
+        if log_path is not None:
+            self.save_duplicates_log(save_dir=log_path, log_columns=log_cols)
+
+    def save_duplicates_log(self, save_dir, log_columns, indent=4, ensure_ascii=False):
+        with open(save_dir, 'w', encoding="utf-8") as f:
+                log_duplicates = self.log_with_composition(columns=log_columns)
+                json.dump(log_duplicates, f, indent=indent, ensure_ascii=ensure_ascii)
+
+    def log_with_composition(self, columns=[]):
+        """
+        columns:list[str]
+            - log addtional data from dataframe.
+        """
         log_with_comps = dict()
         onehot_fracs = self.onehot_fracs()
         for k, v in  self.duplicated_comps_group.items():
-            log_with_comps[k]={idx: str(self.onehot_codec.decode(onehot_fracs[idx])) for idx in v}
+            log_with_comps[k]={idx: str(self.onehot_codec.decode(onehot_fracs[idx]))+f"{columns}={str([self._df.loc[idx, col] for col in columns])}" for idx in v}
             # add composition string for information
             if len(log_with_comps[k])==1 and len(log_with_comps[k][v[0]])==0:
                 # it happens when composition is invalid
@@ -694,7 +703,7 @@ class Dataset(D2TableDataset):
                  drop_cols: Optional[list[str]] = None,
                  exception_col: Optional[str | list[str]] = "Exceptions",
                  encode_onehot_fracs:bool=True,
-                 rule_elements_set:bool=True):
+                 rule_elements_set:Literal['validation', 'overwrite', 'pass']='default'):
         self.config = config_parser(config, mode="dataset")
         super().__init__(
             csv_path, 

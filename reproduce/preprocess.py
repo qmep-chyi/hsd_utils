@@ -53,7 +53,7 @@ def preprocess(raw_dataset_path, preprocess_config):
     # generate cleaned datatable with comositional columns only
     hsd = Dataset(raw_dataset_path, exception_col='Exceptions')
     preprocessor = Preprocessor(hsd, preprocess_config)
-    return preprocessor.convert()
+    return preprocessor.convert(make_dir=True, exist_ok=True)
 
 def featurization(cleaned_df, featurizer_config):
     #featurization

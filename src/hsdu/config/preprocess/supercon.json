@@ -19,8 +19,8 @@
     "dataset_config": "supercon_20260430.json",
     "simple_target": true,
     "output_dir": "temp_devs/",
-    "save_compositional5_dir": "preprocessed_supercon.csv",
-    "save_log_dir": "preprocessed_supercon.log.json",
+    "save_compositional5_pth": "preprocessed_supercon.csv",
+    "save_log_pth": "preprocessed_supercon.log.json",
     "keep_original_index_as": "index",
     "keep_original_index_from": null
 }

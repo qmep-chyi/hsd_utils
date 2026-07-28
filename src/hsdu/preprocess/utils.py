@@ -29,11 +29,12 @@ from hsdu.utils.utils import merge_dfs, feature_name_parser
 from hsdu.utils.conversion_utils import process_targets
 
 class TcMerger():
-    def __init__(self, idx, criteria, rule):
+    def __init__(self, idx, criteria, rule, cols_to_list:list[str]=[]):
         self.idx0 = idx
         self.criteria = criteria
         self.crit0 = criteria[idx]
         self.idx_to_be_merged=[]
+        self.cols_to_list = cols_to_list # instead of merge to a scalar, list all items (implemented to list merged entries)
         
         self.rule=rule
 
@@ -97,7 +98,7 @@ class TcMerger():
         return out.loc[:,targets].iloc[0].to_dict()
     
     def end_of_criteria(self, idx, df, targets, idx_to_drop):
-        """
+        """end of criteria so a new entry can be settled.
         if end_of_criteria, 
             * If inside of the loop for dataset.duplicated_comps_group[idx].keys():
                 * re-init TcMerger instead of adding it to the idx_to_drop
@@ -113,6 +114,10 @@ class TcMerger():
             dict = self.merge_method(df.loc[[self.idx0]+self.idx_to_be_merged.copy()], targets)
             for k, v in dict.items():
                 df.loc[self.idx0, k]=v
+            if len(self.cols_to_list)>0:
+                for col in self.cols_to_list:
+                    df[col]=df[col].astype('object')
+                    df.at[self.idx0, col]=df.loc[self.idx_to_be_merged, col].tolist()
             assert self.idx0 not in self.idx_to_be_merged
             idx_to_drop=idx_to_drop+self.idx_to_be_merged
         else:
@@ -131,7 +136,7 @@ class Preprocessor():
             (`elements` and `elements_fractions`) are not matched.
             composition string is parsed by `Composition` from pymatgen.core.composition.
     """
-    def __init__(self, data, preprocess_config, test:bool = False, output_dir:str|None=None, validate_by_comps:bool=False,
+    def __init__(self, data, preprocess_config, test:bool = False, validate_by_comps:bool=False,
                  skip_init_duplicate_group=False) -> None:
         self.log={} # temporal dictionary for log..
         self.config = config_parser(config=preprocess_config, mode="preprocess")
@@ -151,12 +156,15 @@ class Preprocessor():
         elif self.config.get("duplicates_rule") is not None:
             dist_cutoffs = dict(**self.config['duplicates_rule'].get('merge_criteria'))
             rule_nan_comps = self.config['duplicates_rule'].get('rule_nan_compositions')
-            self.dataset.group_duplicates(**dist_cutoffs, save_dir='group_duplicates_log.json', rule_nan_compositions=rule_nan_comps)
-            self.dataset.add_duplicated_comps_column(criteria_rule=self.config['duplicates_rule'].get("criteria"))
+            log_cols = self.config['duplicates_rule'].get("log_columns", [])
+            self.dataset.group_duplicates(**dist_cutoffs, save_dir='group_duplicates_log.json', rule_nan_compositions=rule_nan_comps, log_columns=log_cols)
+            if self.config['duplicates_rule'].get("temporal_split") is not None:
+                t_split = self.config['duplicates_rule']['temporal_split']
+                self.dataset.temporal_split(split=t_split, col='year', log_path='group_dupl_temporal_split_log.json', log_cols=['year'])
         else:
             raise ValueError(self.config.get('duplicates_rule'))
         if self.config.get("duplicates_rule") is not None:
-            self.log["duplicated_comps"]=self.dataset.log_with_composition()
+            self.log["duplicated_comps"]=self.dataset.log_with_composition(columns=self.config["duplicates_rule"]["log_columns"])
         self.test = test
 
     def convert(self, save_dir=None, make_dir=False, exist_ok=False, simple_target=False)->pd.DataFrame:
@@ -168,11 +176,18 @@ class Preprocessor():
             assert b["elements"].apply(lambda x: all(isinstance(i, str) for i in ast.literal_eval(x))).all()
             assert b["elements_fraction"].apply(lambda x: all(isinstance(i, (int, float)) for i in ast.literal_eval(x))).all()
             assert b.drop(columns=["elements", "elements_fraction"]).apply(lambda x: all(isinstance(i, float) for i in x)).all()
-        elif save_dir is not None:
+        elif save_dir is not None or self.config.get("output_dir") is not None:
+            if save_dir is not None and self.config.get("output_dir") is not None:
+                raise ValueError(f"both {save_dir=} and {self.config['output_dir']=} exists")
+            elif save_dir is None:
+                save_dir = Path(self.config['output_dir'])
+            else:
+                if not isinstance(save_dir, Path):
+                    save_dir = Path(save_dir)
             if make_dir:
                 save_dir.mkdir(exist_ok=exist_ok)
-            out_df.to_csv(self.save_compositional5_pth, index=False)
-            with open(self.save_log_pth, 'w', encoding="utf-8") as f:
+            out_df.to_csv(save_dir.joinpath(self.config["save_compositional5_pth"]), index=False)
+            with open(save_dir.joinpath(self.config["save_log_pth"]), 'w', encoding="utf-8") as f:
                     json.dump(self.log, f, indent=4, ensure_ascii=False)
         return out_df
     
@@ -220,6 +235,10 @@ class Preprocessor():
             out_df[config["keep_original_index_as"]]=dataset._df[config["keep_original_index_from"]]
         if config.get("duplicates_rule") is not None:
             out_df = self.merge_duplicates(config, out_df, targets)
+            if config["duplicates_rule"].get("temporal_split") is not None:
+                # drop entries have no group (by temporal split)
+                grouped_entries = [k for k, v in dataset.idx2aux['duplicate_group'].items() if v is not None and k in out_df.index]
+                out_df = out_df.loc[grouped_entries]
         out_df = out_df.drop(columns=config["drop_cols_after_merge_duplicates"])
         
         if config.get("exceptions") is None:
@@ -231,22 +250,23 @@ class Preprocessor():
     def merge_duplicates(self, config, out_df: pd.DataFrame, targets):
         """should be ran before self.exclude_exceptions().
 
-        modify representative(merged) row, return indices to drop.
+        modify representative(to be merged) row, return indices to drop.
         using `np.allclose(a_fracs, b_fracs, rtol=rtol)`, default rtol=0.1.
         """
         groups=self.dataset.duplicated_comps_group
+        # duplicated_comps_group initialized by: 
+        #   which requires hsdu.dataset.D2TableDataset.group_duplicates to be initialized.
         criteria_rule = config["duplicates_rule"]["criteria"]
         tc_rule = config["duplicates_rule"]["tc"]
-        if criteria_rule=="single_ref":
-            criteria=out_df["full citation"].to_list()
-        elif criteria_rule=="dataset": # merge cross the entire dataset
+
+        if criteria_rule=="dataset": # merge cross the entire dataset
             criteria=list([0]*(len(out_df)))
         else:
             raise NotImplementedError(config["duplicates_rule"]["criteria"])
     
         idx_to_drop=[]
         for g_idx, group_dict in groups.items():
-            merger = TcMerger(groups[g_idx][0], criteria, tc_rule)
+            merger = TcMerger(groups[g_idx][0], criteria, tc_rule, cols_to_list=config["duplicates_rule"].get("cols_to_list", []))
             for idx1 in groups[g_idx]:
                 if idx1==groups[g_idx][0]:
                     pass
@@ -282,9 +302,9 @@ class Preprocessor():
                     if el in config["exceptions"]["num_elements"]["ignore_elements"]:
                         elements_number=elements_number-1
 
-                if elements_number<= num_el_range['min']:
+                if elements_number< num_el_range['min']:
                     keep_rows.append(False)
-                elif elements_number >= num_el_range['max']:
+                elif elements_number > num_el_range['max']:
                     keep_rows.append(False)
                 else:
                     keep_rows.append(True)
