@@ -10,6 +10,7 @@
             "sort_by": "max_tcs"
         },
         "criteria": "dataset",
+        "rule_nan_compositions": "ignore",
         "merge_criteria":{
             "cityblock": 0.01,
             "smape": 0.02,

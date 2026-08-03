@@ -3,7 +3,7 @@
         "num_elements":{
             "min":5,
             "max":30,
-            "ignore_elements":["H", "He", "C", "N", "O", "F", "Ne"]
+            "ignore_elements":["H", "He", "Li", "Be", "B", "C", "N", "O", "F", "Ne"]
         },
         "tc":{
             "non_sc_observed": true,
@@ -17,7 +17,13 @@
         "elements_fraction",
         "doi",
         "flags",
-        "year"
+        "year",
+        "material_class",
+        "not_bulk",
+        "repr_lattice",
+        "line_compound",
+        "species_partitioned",
+        "process_dep_studied"
     ],
     "drop_cols_after_merge_duplicates":[
         "num_valid_tc"
@@ -35,7 +41,7 @@
             "cross_elements_set": false
         },
         "log_columns":["year"],
-        "cols_to_list":["hesc_id", "doi"]
+        "cols_to_list":["hesc_id", "doi", "material_class", "not_bulk", "repr_lattice", "line_compound", "species_partitioned", "process_dep_studied"]
     },
     "dataset_config": "default.json",
     "output_dir": "temp_devs/",

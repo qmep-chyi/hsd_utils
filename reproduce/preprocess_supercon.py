@@ -819,7 +819,7 @@ if __name__=="__main__":
     from hsdu.preprocess.utils import featurizer_config_loader
     dataset = D2TableDataset(out_df, exception_col=None, encode_onehot_fracs=False)
     featurized_df = pd.DataFrame()
-    featurized_df['comps_pymatgen']=comps_pymatgen_df['comps_pymatgen']
+    featurized_df['comps_pymatgen']=dataset._df['comps_pymatgen']
 
     featurizers_list, col_names_df = featurizer_config_loader(config='comp450', override_njobs=False)
     featurizer = MultipleFeaturizer(featurizers_list)
@@ -836,7 +836,7 @@ if __name__=="__main__":
     from hsdu.preprocess.utils import featurizer_config_loader
     dataset = D2TableDataset(out_df, exception_col=None, encode_onehot_fracs=False)
     featurized_df = pd.DataFrame()
-    featurized_df['comps_pymatgen']=comps_pymatgen_df['comps_pymatgen']
+    featurized_df['comps_pymatgen']=dataset._df['comps_pymatgen']
 
     featurizers_list, col_names_df = featurizer_config_loader(config='comp146', override_njobs=False)
     featurizer = MultipleFeaturizer(featurizers_list)
@@ -845,3 +845,5 @@ if __name__=="__main__":
     # comps_pymatgen column is a Composition object so drop or get string.
     featurized_df['comps_pymatgen']=featurized_df['comps_pymatgen'].apply(lambda x:x.to_pretty_string())
     featurized_df.to_csv('supercon_maxTc_comp146.csv')
+
+# %%

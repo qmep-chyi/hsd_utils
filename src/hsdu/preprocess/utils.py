@@ -117,7 +117,7 @@ class TcMerger():
             if len(self.cols_to_list)>0:
                 for col in self.cols_to_list:
                     df[col]=df[col].astype('object')
-                    df.at[self.idx0, col]=df.loc[self.idx_to_be_merged, col].tolist()
+                    df.at[self.idx0, col]=list(set(df.loc[self.idx_to_be_merged, col]))
             assert self.idx0 not in self.idx_to_be_merged
             idx_to_drop=idx_to_drop+self.idx_to_be_merged
         else:

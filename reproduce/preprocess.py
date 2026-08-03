@@ -51,7 +51,7 @@ from hsdu.preprocess.utils import Preprocessor
 
 def preprocess(raw_dataset_path, preprocess_config):
     # generate cleaned datatable with comositional columns only
-    hsd = Dataset(raw_dataset_path, exception_col='Exceptions')
+    hsd = Dataset(raw_dataset_path)
     preprocessor = Preprocessor(hsd, preprocess_config)
     return preprocessor.convert(make_dir=True, exist_ok=True)
 
@@ -75,7 +75,8 @@ preprocess_config_list = ['maxTc']
 featurize_config_list = ['comp146', 'comp450']
 
 # your path to the dataset
-dataset_path = r'$(path_to_hsdu_pacakge)\src\hsdu\data\dataset_20260723.csv'
+dataset_path = r'$(path_to_hsdu_pacakge)\src\hsdu\data\dataset_20260803.csv'
+
 
 for pconfig in preprocess_config_list:
 
