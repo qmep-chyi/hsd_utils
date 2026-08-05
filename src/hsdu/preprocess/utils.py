@@ -143,7 +143,7 @@ class Preprocessor():
         self.log["config_json"]=self.config
 
         if isinstance(data, (str, Path)):
-            self.dataset = Dataset(data, self.config['dataset_config'])
+            self.dataset = Dataset(data, self.config['dataset_config'], exception_col=self.config.get("hsd_exception_col"))
         else:
             self.dataset = data
         if validate_by_comps:

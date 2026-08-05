@@ -51,8 +51,8 @@ from hsdu.preprocess.utils import Preprocessor
 
 def preprocess(raw_dataset_path, preprocess_config):
     # generate cleaned datatable with comositional columns only
-    hsd = Dataset(raw_dataset_path)
-    preprocessor = Preprocessor(hsd, preprocess_config)
+    #hsd = Dataset(raw_dataset_path)
+    preprocessor = Preprocessor(raw_dataset_path, preprocess_config)
     return preprocessor.convert(make_dir=True, exist_ok=True)
 
 def featurization(cleaned_df, featurizer_config):
@@ -71,11 +71,12 @@ def featurization(cleaned_df, featurizer_config):
     return featurized_df, col_names_df
 
 
-preprocess_config_list = ['maxTc']
+preprocess_config_list = ['maxTc_bulkalloy', 'maxTc'] 
 featurize_config_list = ['comp146', 'comp450']
 
 # your path to the dataset
-dataset_path = r'$(path_to_hsdu_pacakge)\src\hsdu\data\dataset_20260803.csv'
+#dataset_path = r'$(path_to_hsdu_pacakge)\src\hsdu\data\dataset_20260803.csv'
+dataset_path = r'C:\Users\chyi\hsd_utils\src\hsdu\data\dataset_20260803.csv'
 
 
 for pconfig in preprocess_config_list:

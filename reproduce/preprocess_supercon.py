@@ -179,7 +179,7 @@ if __name__=="__main__":
     
     #your path to hsdu pacakge or 20240322_MDR_OAndM.txt from MDR SuperCon
     #### replace it to yours ####
-    supercon_raw = r'$(path_to_hsdu_pacakge)\src\hsdu\data\miscs\20240322_MDR_OAndM.txt' 
+    supercon_raw = r'C:\Users\chyi\hsd_utils\src\hsdu\data\miscs\20240322_MDR_OAndM.txt' 
     data=pd.read_csv(supercon_raw, sep='\t')
 
     # drop full column names, use abbreviations.
@@ -604,6 +604,7 @@ if __name__=="__main__":
     # %%
     print("##### Group Duplicates #####")
     df_cleaned['supercon_index']=df_cleaned.index.to_series()
+    # supercon 'num' column looks like a id number. this is just the row index.
     df_cleaned
 
     # %% [markdown]
@@ -668,6 +669,7 @@ if __name__=="__main__":
     group_lengths={k: len(v) for k, v in dup_group.items()}
     groups_df = pd.DataFrame.from_dict(group_lengths, orient='index', columns=['size'])
     groups_df['members']=dup_group
+    # 이 df의 index는 원래의 idnex와 아무 관련이 없고, 'members' column의 인덱스는 dataset._df의 인덱스임.
     groups_df
 
     # %%
@@ -777,7 +779,7 @@ if __name__=="__main__":
     dataset._df['cv_bulk']=[groups_df_merged.loc[group_idx, 'cv_bulk'] for _, group_idx in idx_to_group.items()]
     dataset._df
 
-    # %%
+    # %% entries with the highest cv of 'bulk_tc's
     dataset._df[(dataset._df['cv']>0.2) & (dataset._df['cv_bulk']<0.2)].sort_values(by='cv_bulk', ascending=False)
 
     # %% [markdown]
@@ -802,48 +804,47 @@ if __name__=="__main__":
     out_df=out_df.rename(columns=rename_dicts)
 
     # columns order:
-    out_df=out_df[['group_size', 'composition', 'supercon_num', 'tcs', 'min_tcs', 'max_tcs', 'mean_tcs', 'std_tcs',
+    out_df=out_df[['group_size', 'members', 'composition', 'supercon_num', 'tcs', 'min_tcs', 'max_tcs', 'mean_tcs', 'std_tcs',
                 'cv_tcs', 'bulk_tcs', 'max_bulk_tcs', 'min_bulk_tcs', 'mean_bulk_tcs',
                 'std_bulk_tcs', 'cv_bulk_tcs']]
-    out_df.to_csv('preprocessed_supercon_20260513.csv', index_label='group_id')
+    out_df.to_csv('supercon_merge_dupls_20260804.csv', index_label='group_id')
 
 
     # %% [markdown]
     # ## Featurize:
     #%%
-    comps_pymatgen_df=pd.DataFrame()
-    comps_pymatgen_df['comps_pymatgen'] = {index:dataset.idx2aux['comps_pymatgen'][index] for index, members in groups_df_merged['members'].items()}
-    out_df = pd.concat([out_df, comps_pymatgen_df], axis=1)
-    # %% featurization
+    #comps_pymatgen_df=pd.DataFrame()
+    out_df['comps_pymatgen'] = {index:dataset._df.loc[members[0], 'comps_pymatgen'] for index, members in out_df['members'].items()}
+    # %% featurization comps450
     from matminer.featurizers.base import MultipleFeaturizer
     from hsdu.preprocess.utils import featurizer_config_loader
-    dataset = D2TableDataset(out_df, exception_col=None, encode_onehot_fracs=False)
-    featurized_df = pd.DataFrame()
-    featurized_df['comps_pymatgen']=dataset._df['comps_pymatgen']
+
+    featurized_df=out_df.copy()
 
     featurizers_list, col_names_df = featurizer_config_loader(config='comp450', override_njobs=False)
     featurizer = MultipleFeaturizer(featurizers_list)
     featurizer.featurize_dataframe(featurized_df, col_id='comps_pymatgen', inplace=True)
 
-    # comps_pymatgen column is a Composition object so drop or get string.
-    featurized_df['comps_pymatgen']=featurized_df['comps_pymatgen'].apply(lambda x:x.to_pretty_string())
-    #%%
-    featurized_df.to_csv('supercon_maxTc_comp450.csv')
 
     #%%
-        # %% featurization
-    from matminer.featurizers.base import MultipleFeaturizer
-    from hsdu.preprocess.utils import featurizer_config_loader
-    dataset = D2TableDataset(out_df, exception_col=None, encode_onehot_fracs=False)
-    featurized_df = pd.DataFrame()
-    featurized_df['comps_pymatgen']=dataset._df['comps_pymatgen']
+    # comps_pymatgen column is a Composition object so drop
+    featurized_df=featurized_df.drop(columns=['comps_pymatgen'])
+
+    # save as a csv file
+    featurized_df.to_csv('supercon_maxTc_comp450.csv', index_label='index')
+
+    #%% comps 146
+    featurized_df=out_df.copy()
 
     featurizers_list, col_names_df = featurizer_config_loader(config='comp146', override_njobs=False)
     featurizer = MultipleFeaturizer(featurizers_list)
     featurizer.featurize_dataframe(featurized_df, col_id='comps_pymatgen', inplace=True)
 
-    # comps_pymatgen column is a Composition object so drop or get string.
-    featurized_df['comps_pymatgen']=featurized_df['comps_pymatgen'].apply(lambda x:x.to_pretty_string())
-    featurized_df.to_csv('supercon_maxTc_comp146.csv')
+    # comps_pymatgen column is a Composition object so drop
+    featurized_df=featurized_df.drop(columns=['comps_pymatgen'])
+
+    # save as a csv file
+    featurized_df.to_csv('supercon_maxTc_comp146.csv', index_label='index')
+
 
 # %%

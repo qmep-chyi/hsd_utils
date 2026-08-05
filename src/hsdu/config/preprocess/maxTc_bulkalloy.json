@@ -44,6 +44,7 @@
         "cols_to_list":["hesc_id", "doi", "material_class", "not_bulk", "repr_lattice", "line_compound", "species_partitioned", "process_dep_studied"]
     },
     "dataset_config": "default.json",
+    "hsd_exception_col": "exception_0803",
     "output_dir": "temp_devs/",
     "save_compositional5_pth": "compositional5_max_tc.csv",
     "save_log_pth": "compositional5_max_tc.log.json",
