@@ -179,7 +179,7 @@ if __name__=="__main__":
     
     #your path to hsdu pacakge or 20240322_MDR_OAndM.txt from MDR SuperCon
     #### replace it to yours ####
-    supercon_raw = r'C:\Users\chyi\hsd_utils\src\hsdu\data\miscs\20240322_MDR_OAndM.txt' 
+    supercon_raw = r'..\src\hsdu\data\miscs\20240322_MDR_OAndM.txt' 
     data=pd.read_csv(supercon_raw, sep='\t')
 
     # drop full column names, use abbreviations.

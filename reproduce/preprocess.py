@@ -70,14 +70,11 @@ def featurization(cleaned_df, featurizer_config):
     featurized_df['comps_pymatgen']=featurized_df['comps_pymatgen'].apply(lambda x:x.to_pretty_string())
     return featurized_df, col_names_df
 
-
-preprocess_config_list = ['maxTc_bulkalloy', 'maxTc'] 
+preprocess_config_list = ['maxTc_temporal_split', 'maxTc_bulkalloy', 'maxTc'] 
 featurize_config_list = ['comp146', 'comp450']
 
 # your path to the dataset
-#dataset_path = r'$(path_to_hsdu_pacakge)\src\hsdu\data\dataset_20260803.csv'
-dataset_path = r'C:\Users\chyi\hsd_utils\src\hsdu\data\dataset_20260803.csv'
-
+dataset_path = r'$(path_to_hsdu_pacakge)\src\hsdu\data\dataset_20260803.csv'
 
 for pconfig in preprocess_config_list:
 

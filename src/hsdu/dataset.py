@@ -727,6 +727,29 @@ class Dataset(D2TableDataset):
             return self[self.get_idx_by_hesc_id(hesc_id)]
         else:
             raise TypeError
+
+    def export_subset_by_flags(self, 
+                        flag_cols:list[str] = ['material_class', 'not_bulk', 'repr_lattice', 'line_compound', 'species_partitioned', 'process_dep_studied'], 
+                        whitelists:dict=dict(
+                            material_class = ['alloy',],
+                            not_bulk= ['FALSE'],
+                            repr_lattice= ['bcc', 'hcp', 'fcc', 'σ-phase', 'β-Mn', 'α-Mn', 'fcc, bcc', 'bcc, fcc', 'bcc, hcp', 'a-Mn type'],
+                            line_compound=['FALSE'],
+                            species_partitioned=[False],
+                            process_dep_studied=['annealing', 'annealing, quenching', 'solutionizing, quenching', 'solutionizing, quenching, annealing', 'preparation_method', 'heat_treatment'],
+                            ),
+                        flag_pass_none:list[str] = ['process_dep_studied'],
+                        export_dir:str|Path='dataset_bulkalloy.csv',
+                        print_value_counts:bool=True
+                        ):
+        """ export entries with valid flags as a csv file.
+
+        default args: used to export bulk alloy subset.
+        """
+        if print_value_counts:
+            for k, v in whitelists.items():
+                print(df[k].value_counts())
+        pass
         
     def validate_elem_frac_length(self):
         raise DeprecationWarning
