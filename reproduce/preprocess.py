@@ -74,7 +74,7 @@ preprocess_config_list = ['maxTc_temporal_split', 'maxTc_bulkalloy', 'maxTc']
 featurize_config_list = ['comp146', 'comp450']
 
 # your path to the dataset
-dataset_path = r'$(path_to_hsdu_pacakge)\src\hsdu\data\dataset_20260803.csv'
+dataset_path = r'..\src\hsdu\data\dataset_0803.csv'
 
 for pconfig in preprocess_config_list:
 

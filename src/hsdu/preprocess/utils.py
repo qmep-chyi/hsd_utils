@@ -285,6 +285,7 @@ class Preprocessor():
         drop rows with invalid values
         """
         self.log["exceptions"]={}
+        self.log["exceptions"]["valid_composition_on_dataset"]=len([i for i in self.dataset.idx2aux['comps_pymatgen'].values() if i is not None])
         print(f"shape of df before exceptions: {out_df.shape}")
         self.log["exceptions"]["shape(df)_before_exceptions"]=out_df.shape
         # filter1. non_sc_observed
