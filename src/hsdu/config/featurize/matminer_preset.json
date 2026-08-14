@@ -1,0 +1,6 @@
+{
+    "featurizers": [
+        "preset_matminer145"
+    ],
+    "n_jobs": 1
+}

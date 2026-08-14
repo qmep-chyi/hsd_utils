@@ -210,13 +210,15 @@ class InhouseSecondary(AbstractData):
         return 1 
     
     @staticmethod
-    def configurational_entropy(_, fractions):
+    def configurational_entropy(_, fractions, normalize_to_one=True):
         """per R.
 
         implemented by JH Park, 
         instead of configurational entropy.
         """
-        arr = np.array(fractions, dtype=float)
+        assert normalize_to_one
+        arr = np.array(fractions, dtype=float)/np.sum(fractions)
+        
         return -np.sum(arr * np.log(arr))
     
     def occu_ve_init(self, magpie_data)->int:
@@ -487,7 +489,7 @@ class CustomPropertyStats(PropertyStats):
 
         statistics = stat.split("::")
         unparsed_stat_args=[]
-        if len(statistics)>=2:
+        if len(statistics)==2:
             for stat_arg in statistics[1:]:
                 if stat_arg=="uw":
                     weights = None
@@ -495,6 +497,9 @@ class CustomPropertyStats(PropertyStats):
                     pass
                 else:
                     unparsed_stat_args.append(stat_arg)
+                    assert weights is not None
+        elif len(statistics)!=1:
+            raise ValueError(len(statistics))
 
         return getattr(self, statistics[0])(data_lst, weights, *unparsed_stat_args)
         
@@ -526,7 +531,7 @@ class CustomPropertyStats(PropertyStats):
         return pairs
 
     @staticmethod
-    def init_all_aps(data_lst: list[float], weights: list[float], weights_rule = "temp") -> tuple[list[float], list[float]]:
+    def init_all_aps(data_lst: list[float], weights: list[float], weights_rule = "temp", eps=1e-9) -> tuple[list[float], list[float]]:
         """
         return all absolute percentages as a list
         """
@@ -543,26 +548,20 @@ class CustomPropertyStats(PropertyStats):
             if weights is not None:
                 weight_out = []
                 for da, db, weight in CustomPropertyStats.iter_pair(data_lst, weights):
-                    out = np.abs(da-db)/np.mean((np.abs(da), np.abs(db)))
-                    if np.isnan(out) or (da==0.0 and db==0.0):
-                        assert da==0.0 and db==0.0
-                        out = 0.0
+                    out = np.abs(da-db)/(np.mean((np.abs(da), np.abs(db)))+eps)
                     ap_out.append(out)
                     weight_out.append(weight)
                 return ap_out, weight_out
             else:
                 for da, db in CustomPropertyStats.iter_pair(data_lst, None):
-                    out = np.abs(da-db)/np.mean((np.abs(da), np.abs(db)))
-                    if np.isnan(out) or (da==0.0 and db==0.0):
-                        assert da==0.0 and db==0.0
-                        out = 0.0
+                    out = np.abs(da-db)/(np.mean((np.abs(da), np.abs(db)))+eps)
                     ap_out.append(out)
                 return ap_out, None
         else:
             raise ValueError(f"len(data_lst):{len(data_lst)}")
         
     @staticmethod
-    def self_prop(data_lst, weights, last_stat = None)->float | bool | int:
+    def self_prop(data_lst, weights=None, last_stat = None)->float | bool | int:
         """
         when property requires fractions
 

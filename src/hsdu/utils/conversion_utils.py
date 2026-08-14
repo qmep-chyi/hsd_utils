@@ -112,7 +112,8 @@ def process_targets(
         valid_targets: tuple[str, ...] = ("avg_Tc", "max_Tc", "std_Tc", "min_Tc"),
         return_num_tcs: bool=False,
         tc_cols=("Tc(K).resistivity.mid", "Tc(K).magnetization.mid", "Tc(K).resistivity.None", "Tc(K).magnetization.onset", "Tc(K).magnetization.None", "Tc(K).resistivity.zero", "Tc(K).specific_heat.mid", "Tc(K).other.None", "Tc(K).resistivity.onset", "Tc(K).specific_heat.onset", "Tc(K).specific_heat.None", "Tc(K).magnetization.zero", "Tc(K).other.onset", "Tc(K).other.mid", "Tc(K).specific_heat.zero"),
-        process_dict: bool=False
+        process_dict: bool=False,
+        add_tcs_col:bool=False
         ) -> pd.DataFrame:
     """process targets, return a new pd.DataFrame
     
@@ -121,7 +122,7 @@ def process_targets(
     """
     #checkout targets
     assert all([t in valid_targets for t in targets]), NotImplementedError(f"current valid targets:{valid_targets}")
-    target_array = []
+    out = dict()
     if return_num_tcs:
         targets.insert(0, "num_valid_tc")
     for row_idx, row in df.iterrows():
@@ -204,6 +205,9 @@ def process_targets(
                 else:
                     raise ValueError
             assert len(row_target)==len(targets)
-        target_array.append(row_target)
-    assert len(target_array)==len(df)
-    return pd.DataFrame(data=target_array, columns=targets, dtype=float)
+        out[row_idx]=dict(zip(targets, row_target))
+        if add_tcs_col:
+            out[row_idx]['tcs']=[v["mean"] for v in tcs]
+            
+    assert len(out)==len(df)
+    return pd.DataFrame.from_dict(out, orient='index')

@@ -42,12 +42,32 @@
 
 #%% 
 # 
+
+import warnings
+
 import pandas as pd
 from matminer.featurizers.base import MultipleFeaturizer
 
 from hsdu.preprocess.utils import featurizer_config_loader
 from hsdu.dataset import D2TableDataset, Dataset
 from hsdu.preprocess.utils import Preprocessor 
+
+warnings.filterwarnings(
+    action='ignore', 
+    category=pd.errors.PerformanceWarning
+)
+
+warnings.filterwarnings(
+    action='ignore', 
+    category=UserWarning,
+    message=".*impute_nan=False.*"
+)
+
+warnings.filterwarnings(
+    action='ignore', 
+    category=UserWarning,
+    message=".*AP is not clearly defined.*"
+)
 
 def preprocess(raw_dataset_path, preprocess_config):
     # generate cleaned datatable with comositional columns only
@@ -63,18 +83,19 @@ def featurization(cleaned_df, featurizer_config):
 
     featurizers_list, col_names_df = featurizer_config_loader(config=featurizer_config)
     featurizer = MultipleFeaturizer(featurizers_list)
-    featurizer.set_n_jobs(1) #TODO: if not, MultipleFeaturizer raise errors on windows11
+    #featurizer.set_n_jobs(1) #TODO: if not, MultipleFeaturizer raise errors on windows11
     featurizer.featurize_dataframe(featurized_df, col_id='comps_pymatgen', inplace=True)
 
     # comps_pymatgen column is a Composition object so drop or get string.
     featurized_df['comps_pymatgen']=featurized_df['comps_pymatgen'].apply(lambda x:x.to_pretty_string())
     return featurized_df, col_names_df
 
-preprocess_config_list = ['maxTc_temporal_split', 'maxTc_bulkalloy', 'maxTc'] 
-featurize_config_list = ['comp146', 'comp450']
+#preprocess_config_list = ['maxTc_temporal_split', 'maxTc_bulkalloy', 'maxTc'] 
+preprocess_config_list = ['maxTc'] 
+featurize_config_list = ['matminer_preset', 'comp449']
 
 # your path to the dataset
-dataset_path = r'..\src\hsdu\data\dataset_0803.csv'
+dataset_path = r'src/hsdu/data/dataset_0811.csv'
 
 for pconfig in preprocess_config_list:
 

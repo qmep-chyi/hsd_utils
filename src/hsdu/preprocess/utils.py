@@ -223,7 +223,9 @@ class Preprocessor():
                 targets=targets,
                 return_num_tcs=True,
                 exception_row=None,
-                non_sc_rule=non_sc_rule)
+                non_sc_rule=non_sc_rule,
+                tc_cols = dataset.column_sets['tc_cols'],
+                add_tcs_col=True)
         elif simple_target:
             target_df=dataset._df[targets]
         

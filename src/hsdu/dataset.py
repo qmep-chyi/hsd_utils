@@ -57,7 +57,7 @@ class BaseDataset(ABC, Sequence):
             old_index=[],
             raw=[],
             processed=[],
-            T_c=[],
+            tc_cols=["Tc(K).resistivity.mid", "Tc(K).magnetization.mid", "Tc(K).resistivity.None", "Tc(K).magnetization.onset", "Tc(K).magnetization.None", "Tc(K).resistivity.zero", "Tc(K).specific_heat.mid", "Tc(K).other.None", "Tc(K).resistivity.onset", "Tc(K).specific_heat.onset", "Tc(K).specific_heat.None", "Tc(K).magnetization.zero", "Tc(K).other.onset", "Tc(K).other.mid", "Tc(K).specific_heat.zero"],
             categorical_data=[],
             categorical_misc=[],
             annotations=[]
@@ -338,8 +338,8 @@ class D2TableDataset(BaseDataset):
         if inplace:
             self.idx2aux['comps_pymatgen']=out_compositions
             self.idx2aux['parsed_fracs']=out_fracs
-            
-        return compositions
+        else:
+            return compositions
         
     def encode_onehot_fracs(self, inplace=True, composition_col:pd.Series|str|None=None,
                             normalize_fractions:bool=True,
@@ -746,9 +746,10 @@ class Dataset(D2TableDataset):
 
         default args: used to export bulk alloy subset.
         """
+        raise NotImplementedError() #TODO: refactor new dataset to produce bulk alloy set and 'exception_0803' column (see 2026-08-07 commit)
         if print_value_counts:
             for k, v in whitelists.items():
-                print(df[k].value_counts())
+                print(self._df[k].value_counts())
         pass
         
     def validate_elem_frac_length(self):
